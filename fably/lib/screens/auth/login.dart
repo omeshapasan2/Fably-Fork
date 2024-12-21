@@ -76,7 +76,18 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Text(
+              'Login',
+              style: TextStyle(
+                fontFamily: 'Italiana',
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 40),
             AuthTextField(controller: _emailController, labelText: 'Email'),
             AuthTextField(
               controller: _passwordController,
@@ -87,25 +98,45 @@ class _LoginScreenState extends State<LoginScreen> {
             AuthButton(text: 'Login', onPressed: _login),
             TextButton(
               onPressed: _forgotPassword,
-              child: const Text('Forgot Password?'),
+              child: const Text('Forgot Password?',
+                  style: TextStyle(color: Colors.white)),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const RegisterScreen()),
                 );
               },
-              child: const Text('Don’t have an account? Register'),
+              child: const Text('Don’t have an account? Register',
+                  style: TextStyle(color: Colors.white)),
             ),
-            // Resend verification email button
             if (_message == 'Email not verified. Check your inbox.')
               ElevatedButton(
                 onPressed: _resendVerificationEmail,
                 child: const Text('Resend Verification Email'),
               ),
-            // Display messages (login errors, password reset, etc.)
-            Text(_message),
+            const SizedBox(height: 20),
+            Text(
+              _message,
+              style: TextStyle(
+                fontFamily: 'Jura',
+                fontSize: 16,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: Image.asset('assets/google_logo.png',
+                      height: 40, width: 40),
+                  onPressed: () {},
+                ),
+              ],
+            ),
           ],
         ),
       ),
