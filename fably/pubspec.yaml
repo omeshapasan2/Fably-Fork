@@ -10,10 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
   firebase_auth: ^5.3.4
   firebase_core: ^3.9.0
-
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
@@ -23,3 +21,14 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/google_logo.png
+
+  fonts:
+    - family: Italiana
+      fonts:
+        - asset: fonts/Italiana-Regular.ttf
+    - family: Jura
+      fonts:
+        - asset: fonts/Jura-Regular.ttf
