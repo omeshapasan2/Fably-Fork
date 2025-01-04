@@ -60,7 +60,7 @@
 38-->[androidx.core:core:1.13.1] C:\Users\Administrator\.gradle\caches\transforms-3\550107df412281421150f813d754eed2\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
 39        android:debuggable="true"
 40        android:extractNativeLibs="false"
-41        android:icon="@mipmap/ic_launcher"
+41        android:icon="@mipmap/launcher_icon"
 42        android:label="fably" >
 43        <activity
 44            android:name="com.example.fably.MainActivity"
