@@ -214,7 +214,7 @@ dependencies:
 
 
 ## Contact
-Project Link: fably.omeshapasan.xyz
+Project Link: https://fably.omeshapasan.xyz
 
 ## Acknowledgments
 - Flutter team for the framework
