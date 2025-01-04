@@ -1,5 +1,8 @@
 # Fably - Smart Fashion AR Application
 
+![image](https://github.com/user-attachments/assets/83a96b4f-e64a-4ddf-a8f5-04972839020d)
+
+
 Fably is an innovative Flutter-based fashion application that leverages Augmented Reality (AR) to revolutionize the way users visualize and choose clothing. Using advanced 3D body scanning technology, the app creates personalized virtual models for accurate clothing visualization and style recommendations.
 
 ## 🎯 Core Features
@@ -208,10 +211,10 @@ dependencies:
 5. Open a Pull Request
 
 ## License
-[Add your license information here]
+
 
 ## Contact
-Project Link: [repository-url]
+Project Link: https://fably.omeshapasan.xyz
 
 ## Acknowledgments
 - Flutter team for the framework
