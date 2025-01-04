@@ -4,6 +4,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../home/home.dart';
 import 'register.dart';
 import 'auth_widget.dart';
+import '../../screens/gender/gender_selection.dart'; // Import for AreYouScreen
+import '../../utils/user_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,7 +23,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  // Login method
+  // Login method wrapper to handle void callback
+  void _handleLogin() {
+    if (!_isLoading) {
+      _login();
+    }
+  }
+
+  // Updated login method
   Future<void> _login() async {
     setState(() {
       _isLoading = true;
@@ -32,12 +41,21 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
 
-      // Check if email is verified
       if (userCredential.user?.emailVerified == false) {
         setState(() {
           _message = 'Email not verified. Check your inbox.';
           _isLoading = false;
         });
+        return;
+      }
+
+      // Check if gender is selected
+      bool hasGender = await UserPreferences.hasSelectedGender();
+      if (!hasGender) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AreYouScreen()),
+        );
       } else {
         Navigator.pushReplacement(
           context,
@@ -52,7 +70,64 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Forgot password method
+  // Google sign-in method wrapper
+  void _handleGoogleSignIn() {
+    if (!_isLoading) {
+      _googleSignInMethod();
+    }
+  }
+
+  // Updated Google sign-in method
+  Future<void> _googleSignInMethod() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await _googleSignIn.signOut();
+      GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        setState(() {
+          _message = 'Google Sign-In was canceled.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await _auth.signInWithCredential(credential);
+
+      // Check if gender is selected
+      bool hasGender = await UserPreferences.hasSelectedGender();
+      if (!hasGender) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AreYouScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _message = 'Google Sign-In Error: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Forgot password method wrapper
+  void _handleForgotPassword() {
+    _forgotPassword();
+  }
+
   Future<void> _forgotPassword() async {
     try {
       await _auth.sendPasswordResetEmail(email: _emailController.text);
@@ -66,7 +141,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Resend verification email method
+  // Resend verification email method wrapper
+  void _handleResendVerification() {
+    _resendVerificationEmail();
+  }
+
   Future<void> _resendVerificationEmail() async {
     User? user = _auth.currentUser;
 
@@ -74,48 +153,6 @@ class _LoginScreenState extends State<LoginScreen> {
       await user.sendEmailVerification();
       setState(() {
         _message = 'Verification email sent again. Please check your inbox.';
-      });
-    }
-  }
-
-  // Google sign-in method
-  Future<void> _googleSignInMethod() async {
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      // Sign out from any existing session
-      await _googleSignIn.signOut();
-
-      // Now, trigger the Google Sign-In process
-      GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
-      if (googleUser == null) {
-        setState(() {
-          _message = 'Google Sign-In was canceled.';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Sign in to Firebase with the obtained credentials
-      await _auth.signInWithCredential(credential);
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    } catch (e) {
-      setState(() {
-        _message = 'Google Sign-In Error: ${e.toString()}';
-        _isLoading = false;
       });
     }
   }
@@ -128,14 +165,14 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              const SizedBox(height: 100), // Add some space from top
+              const SizedBox(height: 100),
               Align(
                 alignment: Alignment.center,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 400), // Set a max width
+                  constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(
                     children: [
-                      Text(
+                      const Text(
                         'Login',
                         style: TextStyle(
                           fontFamily: 'Italiana',
@@ -153,9 +190,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: true,
                       ),
                       const SizedBox(height: 20),
-                      AuthButton(text: 'Login', onPressed: _login),
+                      AuthButton(
+                        text: 'Login',
+                        onPressed: _isLoading ? () {} : _handleLogin,
+                      ),
                       TextButton(
-                        onPressed: _forgotPassword,
+                        onPressed: _isLoading ? null : _handleForgotPassword,
                         child: const Text('Forgot Password?',
                             style: TextStyle(color: Colors.white)),
                       ),
@@ -167,18 +207,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                 builder: (context) => const RegisterScreen()),
                           );
                         },
-                        child: const Text('Don’t have an account? Register',
+                        child: const Text("Don't have an account? Register",
                             style: TextStyle(color: Colors.white)),
                       ),
                       if (_message == 'Email not verified. Check your inbox.')
                         ElevatedButton(
-                          onPressed: _resendVerificationEmail,
+                          onPressed: _handleResendVerification,
                           child: const Text('Resend Verification Email'),
                         ),
                       const SizedBox(height: 20),
                       Text(
                         _message,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'Jura',
                           fontSize: 16,
                           color: Colors.white,
@@ -191,9 +231,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           IconButton(
                             icon: Image.asset('assets/google_logo.png',
                                 height: 40, width: 40),
-                            onPressed: _googleSignInMethod,
+                            onPressed: _isLoading ? () {} : _handleGoogleSignIn,
                           ),
-                          Text(
+                          const Text(
                             'Login via Google',
                             style: TextStyle(color: Colors.white),
                           ),
@@ -203,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 50), // Add space at the bottom
+              const SizedBox(height: 50),
             ],
           ),
         ),
