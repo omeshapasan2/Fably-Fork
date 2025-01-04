@@ -87,23 +87,37 @@ Add to `Info.plist`:
 
 ## Project Structure
 ```
-lib/
-├── screens/
-│   ├── auth/           # Authentication screens
-│   ├── home/           # Home screen and main navigation
-│   ├── scanner/        # Body scanning and measurement
-│   ├── wardrobe/       # Virtual wardrobe and outfit management
-│   ├── try_on/         # Virtual try-on interface
-│   └── profile/        # User profile and preferences
-├── models/
-│   ├── body_model/     # 3D body model implementation
-│   ├── clothing/       # Clothing item models
-│   └── user/           # User data models
-├── services/
-│   ├── ar_service/     # AR implementation
-│   ├── measurement/    # Body measurement processing
-│   └── recommendations/# Style recommendation engine
-└── utils/              # Utility functions and helpers
+fably/
+├── lib/                              # Main source code directory
+│   ├── screens/                      # UI screens and views
+│   │   ├── auth/                    # Authentication related screens
+│   │   │   ├── auth_widget.dart     # Reusable auth UI components
+│   │   │   ├── login.dart          # Login screen implementation
+│   │   │   └── register.dart       # Registration screen implementation
+│   │   ├── gender/                  # Gender selection feature
+│   │   │   └── gender_selection.dart # Gender selection screen
+│   │   ├── home/                    # Main app screens
+│   │   │   └── home.dart           # Home screen implementation
+│   │   └── scanner/                 # Body scanning feature
+│   │       ├── camera.dart         # Camera handling and capture
+│   │       └── scanner.dart        # Scanning interface and logic
+│   ├── utils/                        # Utility functions and helpers
+│   │   └── user_preferences.dart    # User preferences management
+│   └── main.dart                    # Application entry point
+├── assets/                          # Static assets directory
+│   └── Gif_fably.gif               # Loading/intro animation
+├── fonts/                           # Custom fonts
+│   ├── Italiana-Regular.ttf         # Italiana font for headings
+│   └── Jura-Regular.ttf            # Jura font for body text
+├── android/                         # Android platform code
+│   └── app/
+│       └── src/
+│           └── main/
+│               └── AndroidManifest.xml  # Android configuration
+├── ios/                             # iOS platform code
+├── test/                            # Test files directory
+├── pubspec.yaml                     # Project dependencies and config
+└── README.md                        # Project documentation
 ```
 
 ## Features
