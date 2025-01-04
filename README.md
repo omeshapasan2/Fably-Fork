@@ -211,10 +211,10 @@ dependencies:
 5. Open a Pull Request
 
 ## License
-[Add your license information here]
+
 
 ## Contact
-Project Link: [repository-url]
+Project Link: fably.omeshapasan.xyz
 
 ## Acknowledgments
 - Flutter team for the framework
