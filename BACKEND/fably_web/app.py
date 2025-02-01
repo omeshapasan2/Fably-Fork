@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify
+from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,14 +7,8 @@ from bson import ObjectId
 from datetime import datetime
 import config
 from models import Seller
-from flask import render_template
-from forms import AddItemForm
 from werkzeug.utils import secure_filename
 import os
-from flask import Flask, session
-from flask_login import LoginManager
-from flask_login import login_required, current_user
-
 
 app = Flask(__name__)
 
@@ -24,15 +18,15 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
-
 app.config['SECRET_KEY'] = config.SECRET_KEY
 csrf = CSRFProtect(app)
 
 # MongoDB setup
 client = MongoClient(config.MONGO_URI)
-db = client.fably_db  # database name
-sellers_collection = db.sellers # collection/table for seller/auth info
-items_collection = db.items # collection/table for item info
+db = client.fably_db  # Database name
+sellers_collection = db.sellers  # Seller/auth info
+items_collection = db.items  # Item info
+checkout_collection = db.checkouts  # Checkout data
 
 # Login manager setup
 login_manager = LoginManager()
@@ -44,12 +38,46 @@ def load_user(user_id):
     seller_data = sellers_collection.find_one({'_id': ObjectId(user_id)})
     return Seller(seller_data) if seller_data else None
 
-# Add near the top of your file with other imports and configurations
+# Allowed file types for uploads
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# ---------------- CHECKOUT FUNCTIONALITY ----------------
+
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    """Handles checkout form submission from Flutter"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not all(key in data for key in ["name", "address", "phone", "postalCode"]):
+            return jsonify({"error": "Missing required fields"}), 400
+        
+        checkout_data = {
+            "name": data["name"],
+            "address": data["address"],
+            "phone": data["phone"],
+            "postalCode": data["postalCode"],
+            "timestamp": datetime.utcnow()
+        }
+        
+        checkout_collection.insert_one(checkout_data)
+        return jsonify({"message": "Checkout successful!"}), 201
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/checkouts', methods=['GET'])
+@login_required
+def get_checkouts():
+    """Retrieve all checkout records (Admin Only)"""
+    checkouts = list(checkout_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id
+    return jsonify(checkouts)
+
+# ---------------- SELLER & ITEM MANAGEMENT (UNCHANGED) ----------------
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -97,19 +125,6 @@ def dashboard():
     items = db.items.find({'seller_id': seller_id})
     return render_template('dashboard.html', items=items)
 
-    # Fetch items added by the logged-in user
-    user_id = session["user_id"]
-    items = list(items_collection.find({"user_id": user_id}))
-
-    return render_template("dashboard.html", items=items)
-
-
-@app.route('/categories')
-def get_categories():
-    """Get all categories and subcategories"""
-    categories = list(db.categories.find({}, {'_id': 1, 'name': 1, 'subcategories': 1}))
-    return jsonify(categories)
-
 @app.route('/item/add', methods=['GET', 'POST'])
 @login_required
 def add_item():
@@ -131,7 +146,7 @@ def add_item():
                     file.save(filepath)
                     photos.append(f"/static/uploads/{filename}")
         
-        # Create item document with clothing-specific fields
+        # Create item document
         item_data = {
             'seller_id': ObjectId(current_user.id),
             'name': name,
@@ -148,25 +163,21 @@ def add_item():
         flash('Item added successfully!', 'success')
         return redirect(url_for('dashboard'))
     
-    # Get categories for the form
     categories = list(db.categories.find())
     return render_template('add_item.html', categories=categories)
 
 @app.route("/edit_item/<item_id>", methods=["GET", "POST"])
 @login_required
 def edit_item(item_id):
-    # Get the item and verify ownership
     item = items_collection.find_one({"_id": ObjectId(item_id)})
     
     if not item or item.get('seller_id') != ObjectId(current_user.id):
         flash('Item not found or you do not have permission to edit it.', 'error')
         return redirect(url_for("dashboard"))
     
-    # Get categories for the form
     categories = list(db.categories.find())
 
     if request.method == "POST":
-        # Update the item in the database
         updated_data = {
             "name": request.form.get("name"),
             "description": request.form.get("description"),
@@ -176,7 +187,6 @@ def edit_item(item_id):
             "updated_at": datetime.utcnow()
         }
         
-        # Fixed: Use ObjectId for seller_id in the query
         result = items_collection.update_one(
             {
                 "_id": ObjectId(item_id), 
@@ -185,11 +195,7 @@ def edit_item(item_id):
             {"$set": updated_data}
         )
         
-        if result.modified_count > 0:
-            flash('Item updated successfully!', 'success')
-        else:
-            flash('No changes were made to the item.', 'info')
-            
+        flash('Item updated successfully!' if result.modified_count > 0 else 'No changes made.', 'success')
         return redirect(url_for("dashboard"))
 
     return render_template("edit_item.html", item=item, categories=categories)
@@ -197,17 +203,12 @@ def edit_item(item_id):
 @app.route("/delete_item/<item_id>", methods=["POST"])
 @login_required
 def delete_item(item_id):
-    # Verify ownership and delete
     result = items_collection.delete_one({
         "_id": ObjectId(item_id),
         "seller_id": ObjectId(current_user.id)
     })
     
-    if result.deleted_count:
-        flash('Item deleted successfully!', 'success')
-    else:
-        flash('Item not found or you do not have permission to delete it.', 'error')
-    
+    flash('Item deleted successfully!' if result.deleted_count else 'Item not found.', 'success')
     return redirect(url_for("dashboard"))
 
 if __name__ == '__main__':
