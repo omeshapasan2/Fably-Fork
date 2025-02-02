@@ -10,6 +10,8 @@ from models import Seller
 from werkzeug.utils import secure_filename
 import os
 
+import send_email as mail
+
 app = Flask(__name__)
 
 app.secret_key = 'f46a1ac2564717c33df1b0dcd5f2b336'
@@ -93,6 +95,11 @@ def register():
                 'phone': request.form['phone'],
                 'created_date': datetime.utcnow()
             })
+            body = f"""Hello, {request.form['name']}
+
+Thank you for Signing Up to Fably!
+"""
+            mail.send_email(request.form["email"], "Registration to Fably", body)
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('login'))
         
@@ -124,6 +131,14 @@ def dashboard():
     seller_id = ObjectId(current_user.id) if isinstance(current_user.id, str) else current_user.id
     items = db.items.find({'seller_id': seller_id})
     return render_template('dashboard.html', items=items)
+
+
+@app.route('/categories')
+def get_categories():
+    """Get all categories and subcategories"""
+    categories = list(db.categories.find({}, {'_id': 1, 'name': 1, 'subcategories': 1}))
+    return jsonify(categories)
+
 
 @app.route('/item/add', methods=['GET', 'POST'])
 @login_required
