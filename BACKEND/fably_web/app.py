@@ -9,6 +9,9 @@ import config
 from models import Seller
 from werkzeug.utils import secure_filename
 import os
+from cloudinary.uploader import upload
+from cloudinary.utils import cloudinary_url
+from cloudinary.api import delete_resources_by_prefix
 
 import send_email as mail
 
@@ -143,7 +146,7 @@ def get_categories():
     categories = list(db.categories.find({}, {'_id': 1, 'name': 1, 'subcategories': 1}))
     return jsonify(categories)
 
-
+# Add Items to DB
 @app.route('/item/add', methods=['GET', 'POST'])
 @login_required
 def add_item():
@@ -160,10 +163,8 @@ def add_item():
             files = request.files.getlist('photos')
             for file in files:
                 if file and allowed_file(file.filename):
-                    filename = secure_filename(f"{datetime.utcnow().timestamp()}_{file.filename}")
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    file.save(filepath)
-                    photos.append(f"/static/uploads/{filename}")
+                    upload_result = upload(file)
+                    photos.append(upload_result['secure_url'])
         
         # Create item document
         item_data = {
@@ -184,6 +185,7 @@ def add_item():
     
     categories = list(db.categories.find())
     return render_template('add_item.html', categories=categories)
+
 
 @app.route("/edit_item/<item_id>", methods=["GET", "POST"])
 @login_required
@@ -222,10 +224,19 @@ def edit_item(item_id):
 @app.route("/delete_item/<item_id>", methods=["POST"])
 @login_required
 def delete_item(item_id):
-    result = items_collection.delete_one({
-        "_id": ObjectId(item_id),
-        "seller_id": ObjectId(current_user.id)
-    })
+    item = items_collection.find_one({"_id": ObjectId(item_id), "seller_id": ObjectId(current_user.id)})
+    
+    if not item:
+        flash('Item not found.', 'error')
+        return redirect(url_for("dashboard"))
+
+    # Delete Cloudinary images
+    for img_url in item.get('photos', []):
+        public_id = img_url.split("/")[-1].split(".")[0]  # Extract public ID
+        delete_resources_by_prefix(public_id)
+
+    # Delete from MongoDB
+    result = items_collection.delete_one({"_id": ObjectId(item_id)})
     
     flash('Item deleted successfully!' if result.deleted_count else 'Item not found.', 'success')
     return redirect(url_for("dashboard"))

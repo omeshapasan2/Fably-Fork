@@ -3,7 +3,7 @@ import '../../utils/user_preferences.dart';
 import '../scanner/scanner.dart';
 
 class AreYouScreen extends StatelessWidget {
-  const AreYouScreen({Key? key}) : super(key: key);
+  const AreYouScreen({super.key});
 
   Future<void> _handleGenderSelection(
       BuildContext context, String gender) async {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'camera.dart';
 
 class ScannerScreen extends StatelessWidget {
-  const ScannerScreen({Key? key}) : super(key: key);
+  const ScannerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

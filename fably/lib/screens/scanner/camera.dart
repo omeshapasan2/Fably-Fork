@@ -5,7 +5,7 @@ import '../home/home.dart';
 import 'dart:io';
 
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({Key? key}) : super(key: key);
+  const CameraScreen({super.key});
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -142,7 +142,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> _pickFromGallery() async {
     try {
-      final List<XFile>? images = await _picker.pickMultiImage();
+      final List<XFile> images = await _picker.pickMultiImage();
       if (images != null) {
         setState(() => _photos.addAll(images));
       }
