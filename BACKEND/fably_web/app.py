@@ -248,7 +248,7 @@ def delete_item(item_id):
 def get_products():
     try:
         # Fetch the items from the collection
-        items = list(items_collection.find({}, {"_id": 1, "name": 1, "price": 1, "photos": 1}))  # Example: also include other fields like 'name' or 'price'
+        items = list(items_collection.find({}, {"_id": 1, "name": 1, "price": 1, "photos": 1, "description": 1, "category": 1, "stock_quantity": 1}))  # Example: also include other fields like 'name' or 'price'
         
         # Convert ObjectId to string
         for item in items:
