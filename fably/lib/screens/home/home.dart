@@ -2,13 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/login.dart';
 import '../gender/gender_selection.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class Product {
   final String name;
   final String price;
   final String image;
 
-  Product(this.name, this.price, this.image);
+  Product({required this.name, required this.price, required this.image});
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      name: json['name'],
+      price: json['price'],
+      image: json['image'],
+    );
+  }
+}
+
+class ProductService {
+  static const String _baseUrl = 'http://152.53.119.239:5000/products';
+
+  Future<List<Product>> fetchProducts() async {
+    try {
+      final response = await http.get(Uri.parse(_baseUrl));
+
+      if (response.statusCode == 200) {
+        // If the server returns a successful response, parse the JSON
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Product.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load products');
+      }
+    } catch (e) {
+      throw Exception('Error fetching products: $e');
+    }
+  }
 }
 
 class ProductCard extends StatelessWidget {
@@ -54,25 +84,27 @@ class ProductCard extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  Future<void> _logout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late Future<List<Product>> futureProducts;
+
+  @override
+  void initState() {
+    super.initState();
+    futureProducts = ProductService().fetchProducts();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Fably',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
-        ),
+        title: const Text('Fably'),
         centerTitle: true,
         backgroundColor: Colors.black,
         actions: [
@@ -82,7 +114,13 @@ class HomeScreen extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
           ),
         ],
       ),
@@ -92,10 +130,8 @@ class HomeScreen extends StatelessWidget {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.tealAccent),
-              child: Text(
-                'Menu',
-                style: TextStyle(color: Colors.black, fontSize: 24),
-              ),
+              child: Text('Menu',
+                  style: TextStyle(color: Colors.black, fontSize: 24)),
             ),
             ListTile(
               leading: const Icon(Icons.settings_backup_restore),
@@ -110,39 +146,16 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search your Desired style',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey[800],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(left: 16.0, top: 8.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Featured',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GridView.builder(
+      body: FutureBuilder<List<Product>>(
+        future: futureProducts,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            final products = snapshot.data!;
+            return GridView.builder(
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -150,42 +163,23 @@ class HomeScreen extends StatelessWidget {
                 mainAxisSpacing: 16,
                 childAspectRatio: 0.75,
               ),
-              itemCount: 4,
+              itemCount: products.length,
               itemBuilder: (context, index) {
-                final items = [
-                  Product('Premium Black Suite Men', '80',
-                      'assets/black_male_suite.webp'),
-                  Product('Navy Suite Women', '100',
-                      'assets/black_suite_woman.avif'),
-                  Product('Oversized Black Dress Women', '40',
-                      'assets/black_dress.jpg'),
-                  Product('Cozy Hoodie Men', '60', 'assets/hoodie.webp'),
-                ];
-                return ProductCard(product: items[index]);
+                return ProductCard(product: products[index]);
               },
-            ),
-          ),
-        ],
+            );
+          } else {
+            return const Center(child: Text('No products available.'));
+          }
+        },
       ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: '',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
         ],
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.grey,

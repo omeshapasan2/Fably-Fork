@@ -247,8 +247,15 @@ def delete_item(item_id):
 @app.route('/products', methods=['GET'])
 def get_products():
     try:
-        items = list(items_collection.find({}, {"_id": 1}))
+        # Fetch the items from the collection
+        items = list(items_collection.find({}, {"_id": 1, "name": 1, "price": 1}))  # Example: also include other fields like 'name' or 'price'
+        
+        # Convert ObjectId to string
+        for item in items:
+            item["_id"] = str(item["_id"])
+        
         return jsonify(items)
+    
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
