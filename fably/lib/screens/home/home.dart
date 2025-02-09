@@ -8,15 +8,15 @@ import 'package:http/http.dart' as http;
 class Product {
   final String name;
   final double price;
-  final String image;
+  final List<String> images;
 
-  Product({required this.name, required this.price, required this.image});
+  Product({required this.name, required this.price, required this.images});
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       name: json['name'] ?? 'Unknown',
       price: json['price'] ?? 0.0,
-      image: json['image'] ?? '',
+      images: List<String>.from(json['photos'] ?? []),
     );
   }
 }
@@ -55,7 +55,9 @@ class ProductCard extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
-              product.image,
+              product.images.isNotEmpty
+                  ? product.images[0]
+                  : '', // Show the first image
               fit: BoxFit.cover,
               width: double.infinity,
             ),
