@@ -12,6 +12,8 @@ import os
 from cloudinary.uploader import upload
 from cloudinary.utils import cloudinary_url
 from cloudinary.api import delete_resources_by_prefix
+from flask import Flask, jsonify
+from flask_pymongo import PyMongo
 
 import send_email as mail
 
@@ -240,6 +242,15 @@ def delete_item(item_id):
     
     flash('Item deleted successfully!' if result.deleted_count else 'Item not found.', 'success')
     return redirect(url_for("dashboard"))
+
+# returns the items as a JSON response
+@app.route('/products', methods=['GET'])
+def get_products():
+    try:
+        items = list(items_collection.find({}, {"_id": 1}))
+        return jsonify(items)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
