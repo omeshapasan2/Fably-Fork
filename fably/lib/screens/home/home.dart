@@ -4,6 +4,7 @@ import '../auth/login.dart';
 import '../gender/gender_selection.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 
 import '../shop/product.dart';
 
@@ -82,6 +83,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Product>> futureProducts;
 
+  // Refresh method to reload data from API
+
+  Future<void> _refreshProducts() async {
+    setState(() {
+      futureProducts =
+          ProductService().fetchProducts(); // Trigger a fresh fetch
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -134,47 +144,54 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: FutureBuilder<List<Product>>(
-        future: futureProducts,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            final products = snapshot.data!;
-            return GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.75,
-              ),
-              itemCount: products.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    // Navigate to the ProductPage and pass the selected product
+      body: LiquidPullToRefresh(
+        color: const Color.fromARGB(255, 255, 255, 255),
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        height: 60.0,
+        showChildOpacityTransition: false,
+        onRefresh: _refreshProducts,
+        child: FutureBuilder<List<Product>>(
+          future: futureProducts,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (snapshot.hasData) {
+              final products = snapshot.data!;
+              return GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.75,
+                ),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      // Navigate to the ProductPage and pass the selected product
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProductPage(
-                          product: products[
-                              index], // Pass the product to ProductPage
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProductPage(
+                            product: products[
+                                index], // Pass the product to ProductPage
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  child: ProductCard(product: products[index]),
-                );
-              },
-            );
-          } else {
-            return const Center(child: Text('No products available.'));
-          }
-        },
+                      );
+                    },
+                    child: ProductCard(product: products[index]),
+                  );
+                },
+              );
+            } else {
+              return const Center(child: Text('No products available.'));
+            }
+          },
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
