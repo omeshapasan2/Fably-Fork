@@ -5,21 +5,7 @@ import '../gender/gender_selection.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class Product {
-  final String name;
-  final double price;
-  final List<String> images;
-
-  Product({required this.name, required this.price, required this.images});
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      name: json['name'] ?? 'Unknown',
-      price: json['price'] ?? 0.0,
-      images: List<String>.from(json['photos'] ?? []),
-    );
-  }
-}
+import '../shop/product.dart';
 
 class ProductService {
   static const String _baseUrl = 'http://152.53.119.239:5000/products';
@@ -167,7 +153,22 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               itemCount: products.length,
               itemBuilder: (context, index) {
-                return ProductCard(product: products[index]);
+                return GestureDetector(
+                  onTap: () {
+                    // Navigate to the ProductPage and pass the selected product
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductPage(
+                          product: products[
+                              index], // Pass the product to ProductPage
+                        ),
+                      ),
+                    );
+                  },
+                  child: ProductCard(product: products[index]),
+                );
               },
             );
           } else {
