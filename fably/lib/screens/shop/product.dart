@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'cart.dart';
+
 class Product {
   final String name;
   final double price;
@@ -308,6 +310,13 @@ class _ProductPageState extends State<ProductPage> {
                       child: ElevatedButton(
                         onPressed: () {
                           // Implement buy now
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CartPage(),
+                              //builder: (context) => ProductPage(product: myProduct),
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
