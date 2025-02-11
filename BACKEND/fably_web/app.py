@@ -1,8 +1,8 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session
+from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from bson import ObjectId
 from datetime import datetime
 import config
@@ -35,6 +35,8 @@ sellers_collection = db.sellers  # Seller/auth info
 items_collection = db.items  # Item info
 checkout_collection = db.checkouts  # Checkout data
 
+customers_collection = db.customers
+
 # Login manager setup
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -47,6 +49,11 @@ def load_user(user_id):
 
 # Allowed file types for uploads
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+@app.route('/get-csrf-token', methods=['GET'])
+def get_csrf_token():# temporary solution
+    token = generate_csrf()
+    return jsonify({"csrf_token": token})
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -259,5 +266,80 @@ def get_products():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route('/get_cart/<user_id>/', methods=['GET'])
+def get_cart_items(user_id):
+    try:
+        # Fetch the user cart
+        user = customers_collection.find_one({'_id': ObjectId(user_id)})
+        user_cart = user["cart"]
+
+        return_cart = []
+        if len(user_cart)>0:
+            for item in user_cart:
+                item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})# product info corrosponding to id
+                item_product["quantity"] = item["quantity"] # add the quantity attribute.
+                item_product["_id"] = str(item_product["_id"]) # convert objectid to string
+                item_product["seller_id"] = str(item_product["seller_id"]) # convert objectid to string
+                return_cart.append(item_product)
+        print(return_cart)
+        return jsonify(return_cart)
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/add_to_cart/<user_id>/', methods=['GET', 'POST'])
+def add_cart_item(user_id):
+    '''
+accepts input: {'item_id':'1234', 'quantity':1}
+TODO: add crsf token to the input
+'''
+    if request.method=='POST':
+        try:
+            # Fetch the user cart
+            print("Fetch the user cart")
+            user = customers_collection.find_one({'_id': ObjectId(user_id)})
+
+            if not user:
+                return "Error: User not found", 404
+            
+            cart = user["cart"]
+
+            item_id = request.get_json()["item_id"]
+            quantity = request.get_json()["quantity"]
+
+            print(item_id)
+            item_found = False
+
+            item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+            print(item)
+            
+            if not item:
+                return "Error: Item not found", 404
+            
+            for i in range(len(cart)):
+                if cart[i]['_id'] == item_id:
+                    cart[i]['quantity'] += quantity  # Update the quantity
+                    item_found = True
+                    break
+
+            if not item_found:
+                # Add a new item to the cart
+                cart.append({"_id": item_id, "quantity": quantity})
+
+            customers_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'cart': cart}}
+            )
+
+            return "Success!", 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
