@@ -135,10 +135,46 @@ def login():
         flash('Invalid email or password!', 'error')
     return render_template('login.html')
 
+@app.route('/login_customer', methods=['GET', 'POST'])
+def login_customer():
+    if request.method == 'POST':
+        customer = customers_collection.find_one({'email': request.get_json()['email']})
+        
+        if customer and check_password_hash(customer['password'], request.get_json()['password']):
+            session["email"] = customer["email"]
+            session["user_id"] = str(customer["_id"])
+            return "logged in", 200
+            
+    return "Invalid email or password!", 401
+
+@app.route('/register_customer', methods=['GET', 'POST'])
+def register_customer():
+    if request.method == 'POST':
+        existing_user = customers_collection.find_one({'email': request.get_json()['email']})
+        
+        if existing_user is None:
+            hashed_password = generate_password_hash(request.get_json()['password'])
+            sellers_collection.insert_one({
+                #'name': request.get_json()['name'],
+                'email': request.get_json()['email'],
+                'password': hashed_password,
+                'created_date': datetime.utcnow(),
+                'cart':[]
+            })
+            body = f"""Hello, Customer
+
+Thank you for Signing Up to Fably!
+"""
+            mail.send_email(request.form["email"], "Registration to Fably", body)
+            
+            return "Success!", 200
+    return "Already Exists", 400
+
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
+    session.clear()
     return redirect(url_for('login'))
 
 @app.route('/dashboard')
@@ -270,6 +306,10 @@ def get_products():
 @app.route('/get_cart/<user_id>/', methods=['GET'])
 def get_cart_items(user_id):
     try:
+        
+        if not customer_logged_in(user_id):
+            return "Unauthorised!", 400
+        
         # Fetch the user cart
         user = customers_collection.find_one({'_id': ObjectId(user_id)})
         user_cart = user["cart"]
@@ -296,6 +336,10 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            
+            if not customer_logged_in(user_id):
+                return "Unauthorised!", 400
+            
             # Fetch the user cart
             print("Fetch the user cart")
             user = customers_collection.find_one({'_id': ObjectId(user_id)})
@@ -340,6 +384,61 @@ TODO: add crsf token to the input
             print(traceback.format_exc())
             return ("error: "+str(e)), 500
     return abort(404)
+
+
+@app.route('/remove_from_cart/<user_id>/', methods=['GET', 'POST'])
+def remove_cart_item(user_id):
+    '''
+accepts input: {'item_id':'1234', 'quantity':1}
+TODO: add crsf token to the input
+'''
+    if request.method=='POST':
+        try:
+            
+            if not customer_logged_in(user_id):
+                return "Unauthorised!", 400
+            
+            # Fetch the user cart
+            print("Fetch the user cart")
+            user = customers_collection.find_one({'_id': ObjectId(user_id)})
+
+            if not user:
+                return "Error: User not found", 404
+            
+            cart = user["cart"]
+
+            item_id = request.get_json()["item_id"]
+            quantity = request.get_json()["quantity"]
+
+            item = items_collection.find_one({'_id': ObjectId(item_id)})
+            
+            if not item:
+                return "Error: Item not found", 404
+            
+            for i in range(len(cart)):
+                if cart[i]['_id'] == item_id:
+                    cart[i]['quantity'] -= quantity  # Update the quantity
+                    if cart[i]['quantity']<1:
+                        cart.pop(i)
+                    break
+
+            customers_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'cart': cart}}
+            )
+
+            return "Success!", 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
+def customer_logged_in(user_id):
+    if "user_id" not in session.keys() or user_id!=session["user_id"]:
+        return False
+    return True
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
