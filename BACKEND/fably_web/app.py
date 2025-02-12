@@ -143,7 +143,8 @@ def login_customer():
         if customer and check_password_hash(customer['password'], request.get_json()['password']):
             session["email"] = customer["email"]
             session["user_id"] = str(customer["_id"])
-            return "logged in", 200
+            customer["_id"] = str(customer["_id"])
+            return jsonify(customer), 200
             
     return "Invalid email or password!", 401
 
