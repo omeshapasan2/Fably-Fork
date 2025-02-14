@@ -3,8 +3,10 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // For JSON decoding, if needed
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'checkout_screen.dart';
+import '../auth/login.dart';
 
 /*void main() {
   runApp(MyApp());
@@ -66,14 +68,34 @@ class _CartPageState extends State<CartPage> {
 
   //List<Map<String, dynamic>> jsonObject = jsonDecode(fetchWebContent());
 
-  
+  Future<String?> getPrefs(pref) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? value = prefs.getString(pref);
+    return value;
+  }
 
   Future<void> fetchWebContent() async{
+    String cookies = '';
+    Map userInfo = {};
+    getPrefs('cookies').then((c){
+      cookies = c ?? '';
+      
+    });
+    getPrefs('userInfo').then((c){
+      String userInfoStr = c ?? '{}';
+      userInfo = jsonDecode(userInfoStr);
+      
+    });
     //final url = Uri.parse('http://152.53.119.239:5000/products');
-    final url = Uri.parse('127.0.0.1:5000/products');
+    final url = Uri.parse('127.0.0.1:5000/get_cart/${userInfo['_id']}');
 
     try {
-      final response = await http.post(url);
+      final response = await http.get(
+        url,
+        headers: {
+          'Cookie': cookies, // Add cookies to headers
+        },
+        );
       print('Response status: ${response.statusCode}');
       print(response.body);
       if (response.statusCode == 200) {
@@ -99,6 +121,74 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
+  Future<bool> removeFromCart(String id, int quantity) async {
+    String cookies = '';
+    Map userInfo = {};
+    getPrefs('cookies').then((c){
+      cookies = c ?? '';
+      
+    });
+    getPrefs('userInfo').then((c){
+      String userInfoStr = c ?? '{}';
+      userInfo = jsonDecode(userInfoStr);
+      
+    });
+    // Step 1: Retrieve the CSRF token
+    final csrfUrl = Uri.parse('http://127.0.0.1:5000/get-csrf-token');
+    final csrfResponse = await http.get(csrfUrl);
+    
+    if (csrfResponse.statusCode != 200) {
+      throw Exception("Failed to fetch CSRF token: ${csrfResponse.statusCode}");
+    }
+    
+    // Assume the CSRF token is returned as plain text
+    final csrfToken = csrfResponse.body.trim();
+    print("CSRF Token: $csrfToken");
+
+    // Step 2: Prepare the login data as JSON
+    final changePayload = jsonEncode({
+      'item_id': id,
+      'quantity': quantity,
+    });
+
+    // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
+    final url = Uri.parse('http://127.0.0.1:5000/remove_from_cart/${userInfo["_id"]}/');
+    final changeResponse = await http.post(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken, // Adjust header name if needed
+        "Cookies": cookies
+      },
+      body: changePayload,
+    );
+
+    // Step 4: Handle the login response
+    if (changeResponse.statusCode == 200) {
+      // Parse the returned user info
+      print(changeResponse.body);
+
+      // Extract cookies from the response headers
+      // Note: The cookie string might include additional attributes
+      final String? cookies = changeResponse.headers['set-cookie'];
+      print("Cookies: $cookies");
+
+      // Step 5: Save the user info and cookies using SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userInfo', jsonEncode(userInfo));
+      if (cookies != null) {
+        await prefs.setString('cookies', cookies);
+      }
+
+      print("Removed Item Successfully");
+      return true;
+    } else {
+      print("Failed to remove item: ${changeResponse.statusCode}");
+      print("Response: ${changeResponse.body}");
+    }
+    return false;
+  }
+
   // Calculate the total price of items in the cart
   double get totalPrice =>
       cartItems.fold(0.0, (sum, item) => sum + item['price'] * item['quantity']);
@@ -107,9 +197,34 @@ class _CartPageState extends State<CartPage> {
 
   // Remove an item from the cart
   void removeItem(int index) {
-    setState(() {
-      cartItems.removeAt(index);
+    bool status = false;
+    removeFromCart(cartItems[index]['_id'], 1).then((s){
+      status = s;
     });
+
+    if (status == false){
+      print("An error occured whie trying to delete cart item");
+    } else{
+      setState(() {
+        cartItems[index]['quantity']-=1;
+      });
+      if (cartItems[index]['quantity']>=0){
+        setState(() {
+          cartItems.removeAt(index);
+        });
+      }
+    }    
+  }
+
+  void checkLoggedIn(context){
+    if (getPrefs('userInfo') == Null || getPrefs('cookies') == Null){
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoginScreen(),
+        ),
+      );
+    }
   }
 
   @override

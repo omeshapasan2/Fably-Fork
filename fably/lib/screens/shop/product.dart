@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'dart:convert'; // For JSON decoding, if needed
+import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 import 'cart.dart';
+import '../auth/login.dart';
 
 class Product {
+  final String id;
   final String name;
   final double price;
   final List<String> images;
@@ -11,6 +17,7 @@ class Product {
   final String description;
 
   Product({
+    required this.id,
     required this.name,
     required this.price,
     required this.images,
@@ -21,6 +28,7 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
+      id: json['id'] ?? '',
       name: json['name'] ?? 'Unknown',
       price: json['price'] ?? 0.0,
       images: List<String>.from(json['photos'] ?? []),
@@ -45,6 +53,93 @@ class _ProductPageState extends State<ProductPage> {
   String _selectedSize = "M";
   final PageController _pageController = PageController();
   int _currentPage = 0;
+
+  Future<String?> getPrefs(pref) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? value = prefs.getString(pref);
+    return value;
+  }
+
+  bool checkLoggedIn(context){
+    if (getPrefs('userInfo') == Null || getPrefs('cookies') == Null){
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoginScreen(),
+        ),
+      );
+      return false;
+    }
+    return true;
+  }
+
+  Future<bool> addToCart(String id, int quantity) async {
+    String cookies = '';
+    Map userInfo = {};
+    getPrefs('cookies').then((c){
+      cookies = c ?? '';
+      
+    });
+    getPrefs('userInfo').then((c){
+      String userInfoStr = c ?? '{}';
+      userInfo = jsonDecode(userInfoStr);
+      
+    });
+    // Step 1: Retrieve the CSRF token
+    final csrfUrl = Uri.parse('http://127.0.0.1:5000/get-csrf-token');
+    final csrfResponse = await http.get(csrfUrl);
+    
+    if (csrfResponse.statusCode != 200) {
+      throw Exception("Failed to fetch CSRF token: ${csrfResponse.statusCode}");
+    }
+    
+    // Assume the CSRF token is returned as plain text
+    final csrfToken = csrfResponse.body.trim();
+    print("CSRF Token: $csrfToken");
+
+    // Step 2: Prepare the login data as JSON
+    final changePayload = jsonEncode({
+      'item_id': id,
+      'quantity': quantity,
+    });
+
+    // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
+    final url = Uri.parse('http://127.0.0.1:5000/add_to_cart/${userInfo["_id"]}/');
+    final changeResponse = await http.post(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken, // Adjust header name if needed
+        "Cookies": cookies
+      },
+      body: changePayload,
+    );
+
+    // Step 4: Handle the login response
+    if (changeResponse.statusCode == 200) {
+      // Parse the returned user info
+      print(changeResponse.body);
+
+      // Extract cookies from the response headers
+      // Note: The cookie string might include additional attributes
+      final String? cookies = changeResponse.headers['set-cookie'];
+      print("Cookies: $cookies");
+
+      // Step 5: Save the user info and cookies using SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userInfo', jsonEncode(userInfo));
+      if (cookies != null) {
+        await prefs.setString('cookies', cookies);
+      }
+
+      print("Removed Item Successfully");
+      return true;
+    } else {
+      print("Failed to remove item: ${changeResponse.statusCode}");
+      print("Response: ${changeResponse.body}");
+    }
+    return false;
+  }
 
   void _incrementQuantity() {
     setState(() {
@@ -291,6 +386,9 @@ class _ProductPageState extends State<ProductPage> {
                           child: ElevatedButton(
                             onPressed: () {
                               // Implement add to cart
+                              if (checkLoggedIn(context)){
+                                addToCart(widget.product.id, _quantity);
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange,
@@ -310,13 +408,16 @@ class _ProductPageState extends State<ProductPage> {
                       child: ElevatedButton(
                         onPressed: () {
                           // Implement buy now
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CartPage(),
-                              //builder: (context) => ProductPage(product: myProduct),
-                            ),
-                          );
+                          if (checkLoggedIn(context)){
+                            addToCart(widget.product.id, _quantity);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CartPage(),
+                                //builder: (context) => ProductPage(product: myProduct),
+                              ),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,

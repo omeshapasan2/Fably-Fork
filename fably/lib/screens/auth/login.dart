@@ -6,6 +6,10 @@ import 'register.dart';
 import 'auth_widget.dart';
 import '../../screens/gender/gender_selection.dart'; // Import for AreYouScreen
 import '../../utils/user_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert'; // For JSON decoding, if needed
+import 'dart:async';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,10 +27,74 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
+
+  Future<String?> getPrefs(String pref) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? prefString = prefs.getString(pref);
+    
+    return prefString;
+  }
+
+  Future<void> loginCustomer(String email, String password) async {
+    // Step 1: Retrieve the CSRF token
+    final csrfUrl = Uri.parse('http://127.0.0.1:5000/get-csrf-token');
+    final csrfResponse = await http.get(csrfUrl);
+    
+    if (csrfResponse.statusCode != 200) {
+      throw Exception("Failed to fetch CSRF token: ${csrfResponse.statusCode}");
+    }
+    
+    // Assume the CSRF token is returned as plain text
+    final csrfToken = csrfResponse.body.trim();
+    print("CSRF Token: $csrfToken");
+
+    // Step 2: Prepare the login data as JSON
+    final loginPayload = jsonEncode({
+      'email': email,
+      'password': password,
+    });
+
+    // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
+    final loginUrl = Uri.parse('http://127.0.0.1:5000/login_customer');
+    final loginResponse = await http.post(
+      loginUrl,
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken, // Adjust header name if needed
+      },
+      body: loginPayload,
+    );
+
+    // Step 4: Handle the login response
+    if (loginResponse.statusCode == 200) {
+      // Parse the returned user info
+      final Map<String, dynamic> userInfo = jsonDecode(loginResponse.body);
+      print("User Info: $userInfo");
+
+      // Extract cookies from the response headers
+      // Note: The cookie string might include additional attributes
+      final String? cookies = loginResponse.headers['set-cookie'];
+      print("Cookies: $cookies");
+
+      // Step 5: Save the user info and cookies using SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userInfo', jsonEncode(userInfo));
+      if (cookies != null) {
+        await prefs.setString('cookies', cookies);
+      }
+
+      print("Login successful. User info and cookies saved.");
+    } else {
+      print("Login failed with status code: ${loginResponse.statusCode}");
+      print("Response: ${loginResponse.body}");
+    }
+  }
+
   // Login method wrapper to handle void callback
   void _handleLogin() {
     if (!_isLoading) {
       _login();
+      loginCustomer(_emailController.text, _passwordController.text);
     }
   }
 
