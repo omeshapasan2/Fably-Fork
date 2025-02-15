@@ -14,10 +14,12 @@ from cloudinary.utils import cloudinary_url
 from cloudinary.api import delete_resources_by_prefix
 from flask import Flask, jsonify
 from flask_pymongo import PyMongo
+from flask_cors import CORS
 
 import send_email as mail
 
 app = Flask(__name__)
+CORS(app)
 
 app.secret_key = 'f46a1ac2564717c33df1b0dcd5f2b336'
 
