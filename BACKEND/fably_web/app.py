@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session, abort
+from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session, abort, make_response
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,8 +18,12 @@ from flask_cors import CORS
 
 import send_email as mail
 
+def custom_cors_origin(origin):
+    # Allow all origins
+    return origin
+
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True, origins="*")
 
 app.secret_key = 'f46a1ac2564717c33df1b0dcd5f2b336'
 
@@ -29,6 +33,8 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 
 app.config['SECRET_KEY'] = config.SECRET_KEY
 csrf = CSRFProtect(app)
+app.config['DEBUG'] = True
+app.config['WTF_CSRF_ENABLED'] = False
 
 # MongoDB setup
 client = MongoClient(config.MONGO_URI)
@@ -51,6 +57,15 @@ def load_user(user_id):
 
 # Allowed file types for uploads
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+@app.after_request
+def add_cors_headers(response):
+    #response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'  # Replace with your Flutter app's origin
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    return response
+
 
 @app.route('/get-csrf-token', methods=['GET'])
 def get_csrf_token():# temporary solution
@@ -124,6 +139,8 @@ Thank you for Signing Up to Fably!
         flash('Email already exists!', 'error')
     return render_template('register.html')
 
+#csrf.exempt(register)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -136,6 +153,7 @@ def login():
             
         flash('Invalid email or password!', 'error')
     return render_template('login.html')
+#csrf.exempt(login)
 
 @app.route('/login_customer', methods=['GET', 'POST'])
 def login_customer():
@@ -146,7 +164,11 @@ def login_customer():
             session["email"] = customer["email"]
             session["user_id"] = str(customer["_id"])
             customer["_id"] = str(customer["_id"])
-            return jsonify(customer), 200
+            
+            response = make_response(jsonify(customer))
+            #response.set_cookie('test','test_cookie', httponly=False, samesite='Lax', secure=False)
+            
+            return response, 200
             
     return "Invalid email or password!", 401
 
@@ -157,7 +179,7 @@ def register_customer():
         
         if existing_user is None:
             hashed_password = generate_password_hash(request.get_json()['password'])
-            sellers_collection.insert_one({
+            customers_collection.insert_one({
                 #'name': request.get_json()['name'],
                 'email': request.get_json()['email'],
                 'password': hashed_password,
@@ -168,7 +190,7 @@ def register_customer():
 
 Thank you for Signing Up to Fably!
 """
-            mail.send_email(request.form["email"], "Registration to Fably", body)
+            mail.send_email(request.get_json()["email"], "Registration to Fably", body)
             
             return "Success!", 200
     return "Already Exists", 400
@@ -355,12 +377,17 @@ TODO: add crsf token to the input
             item_id = request.get_json()["item_id"]
             quantity = request.get_json()["quantity"]
 
-            print(item_id)
+            print("Item Id:",item_id)
             item_found = False
+            try:
+                item = items_collection.find_one({'_id': ObjectId(item_id)})
 
-            item = items_collection.find_one({'_id': ObjectId(item_id)})
-
-            print(item)
+                print(item)
+            except Exception as e:
+                print(e)
+                item = None;
+                
+            
             
             if not item:
                 return "Error: Item not found", 404
