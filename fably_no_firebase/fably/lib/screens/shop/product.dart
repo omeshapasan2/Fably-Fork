@@ -3,6 +3,10 @@ import 'dart:convert'; // For JSON decoding, if needed
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import '../../screens/gender/gender_selection.dart'; // Import for AreYouScreen
+import '../../utils/user_preferences.dart';
+import '../../utils/requests.dart';
+import '../../utils/prefs.dart';
 
 import 'cart.dart';
 import '../auth/login.dart';
@@ -28,7 +32,7 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'] ?? '',
+      id: json['_id'] ?? '',
       name: json['name'] ?? 'Unknown',
       price: json['price'] ?? 0.0,
       images: List<String>.from(json['photos'] ?? []),
@@ -73,29 +77,23 @@ class _ProductPageState extends State<ProductPage> {
     return true;
   }
 
+  void _showMessage(String message) {
+    print(message);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<bool> addToCart(String id, int quantity) async {
+    final requests = BackendRequests();
+    final prefs = Prefs();
+
     String cookies = '';
     Map userInfo = {};
-    getPrefs('cookies').then((c){
-      cookies = c ?? '';
-      
-    });
-    getPrefs('userInfo').then((c){
-      String userInfoStr = c ?? '{}';
-      userInfo = jsonDecode(userInfoStr);
-      
-    });
+    cookies = await prefs.getPrefs('cookies') ?? '';
+    String? info = await prefs.getPrefs('userInfo');
+    userInfo = jsonDecode( info ?? '{}');
+    
     // Step 1: Retrieve the CSRF token
-    final csrfUrl = Uri.parse('http://127.0.0.1:5000/get-csrf-token');
-    final csrfResponse = await http.get(csrfUrl);
     
-    if (csrfResponse.statusCode != 200) {
-      throw Exception("Failed to fetch CSRF token: ${csrfResponse.statusCode}");
-    }
-    
-    // Assume the CSRF token is returned as plain text
-    final csrfToken = csrfResponse.body.trim();
-    print("CSRF Token: $csrfToken");
 
     // Step 2: Prepare the login data as JSON
     final changePayload = jsonEncode({
@@ -104,6 +102,7 @@ class _ProductPageState extends State<ProductPage> {
     });
 
     // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
+    /*
     final url = Uri.parse('http://127.0.0.1:5000/add_to_cart/${userInfo["_id"]}/');
     final changeResponse = await http.post(
       url,
@@ -114,7 +113,14 @@ class _ProductPageState extends State<ProductPage> {
       },
       body: changePayload,
     );
-
+    */
+    final changeResponse = await requests.postRequest(
+      'add_to_cart/${userInfo['_id']}/',
+      body:{
+        'item_id': id,
+        'quantity': quantity,
+      }
+      );
     // Step 4: Handle the login response
     if (changeResponse.statusCode == 200) {
       // Parse the returned user info
@@ -132,7 +138,7 @@ class _ProductPageState extends State<ProductPage> {
         await prefs.setString('cookies', cookies);
       }
 
-      print("Removed Item Successfully");
+      print("Added Item Successfully");
       return true;
     } else {
       print("Failed to remove item: ${changeResponse.statusCode}");
@@ -387,7 +393,13 @@ class _ProductPageState extends State<ProductPage> {
                             onPressed: () {
                               // Implement add to cart
                               if (checkLoggedIn(context)){
-                                addToCart(widget.product.id, _quantity);
+                                addToCart(widget.product.id, _quantity).then((success){
+                                  if (success){
+                                    _showMessage("$_quantity items added to cart");
+                                  } else{
+                                    _showMessage("Failed to add items to cart. Please try again.");
+                                  }
+                                });
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -409,14 +421,16 @@ class _ProductPageState extends State<ProductPage> {
                         onPressed: () {
                           // Implement buy now
                           if (checkLoggedIn(context)){
-                            addToCart(widget.product.id, _quantity);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CartPage(),
-                                //builder: (context) => ProductPage(product: myProduct),
-                              ),
-                            );
+                            addToCart(widget.product.id, _quantity).then((value) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CartPage(),
+                                  //builder: (context) => ProductPage(product: myProduct),
+                                ),
+                              );
+                            });
+                            
                           }
                         },
                         style: ElevatedButton.styleFrom(

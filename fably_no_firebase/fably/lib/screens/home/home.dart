@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+//import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/login.dart';
 import '../gender/gender_selection.dart';
 import 'dart:convert';
@@ -7,9 +7,14 @@ import 'package:http/http.dart' as http;
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 
 import '../shop/product.dart';
+import '../shop/cart.dart';
+import '../../utils/requests.dart';
+import '../../utils/prefs.dart';
 
 class ProductService {
   static const String _baseUrl = 'http://152.53.119.239:5000/products';
+
+  //static const String _baseUrl = 'http://192.168.1.7:5000/products';
 
   Future<List<Product>> fetchProducts() async {
     try {
@@ -76,6 +81,8 @@ class ProductCard extends StatelessWidget {
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -91,6 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ProductService().fetchProducts(); // Trigger a fresh fetch
     });
   }
+
+  void signOut(){}
 
   @override
   void initState() {
@@ -108,12 +117,20 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_bag_outlined),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartPage(),
+                  //builder: (context) => ProductPage(product: myProduct),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
+            onPressed: () {
+              signOut();
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),

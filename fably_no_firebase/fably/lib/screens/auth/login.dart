@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+//import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../home/home.dart';
 import 'register.dart';
 import 'auth_widget.dart';
 import '../../screens/gender/gender_selection.dart'; // Import for AreYouScreen
 import '../../utils/user_preferences.dart';
+import '../../utils/requests.dart';
+import '../../utils/prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // For JSON decoding, if needed
@@ -19,7 +21,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  //final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String _message = '';
@@ -35,41 +37,37 @@ class _LoginScreenState extends State<LoginScreen> {
     return prefString;
   }
 
-  Future<void> loginCustomer(String email, String password) async {
+  void _showMessage(String message) {
+    print(message);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+
+  Future<bool> loginCustomer(String email, String password) async {
+    final requests = BackendRequests();
+    final prefs = Prefs();
     // Step 1: Retrieve the CSRF token
-    final csrfUrl = Uri.parse('http://127.0.0.1:5000/get-csrf-token');
-    final csrfResponse = await http.get(csrfUrl);
-    
-    if (csrfResponse.statusCode != 200) {
-      throw Exception("Failed to fetch CSRF token: ${csrfResponse.statusCode}");
-    }
-    
-    // Assume the CSRF token is returned as plain text
-    final csrfToken = csrfResponse.body.trim();
-    print("CSRF Token: $csrfToken");
+    String csrfToken = await requests.getCsrf() ?? '';
+    prefs.setPrefs('csrf_token', csrfToken);
 
     // Step 2: Prepare the login data as JSON
-    final loginPayload = jsonEncode({
-      'email': email,
-      'password': password,
-    });
 
     // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
-    final loginUrl = Uri.parse('http://127.0.0.1:5000/login_customer');
-    final loginResponse = await http.post(
-      loginUrl,
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken, // Adjust header name if needed
-      },
-      body: loginPayload,
+    try{
+    final loginResponse = await requests.postRequest(
+      'login_customer',
+      body:
+        {
+          'email': email,
+          'password': password,
+        }
     );
 
     // Step 4: Handle the login response
     if (loginResponse.statusCode == 200) {
       // Parse the returned user info
       final Map<String, dynamic> userInfo = jsonDecode(loginResponse.body);
-      print("User Info: $userInfo");
+      
 
       // Extract cookies from the response headers
       // Note: The cookie string might include additional attributes
@@ -77,24 +75,34 @@ class _LoginScreenState extends State<LoginScreen> {
       print("Cookies: $cookies");
 
       // Step 5: Save the user info and cookies using SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userInfo', jsonEncode(userInfo));
+      
       if (cookies != null) {
-        await prefs.setString('cookies', cookies);
+        await prefs.setPrefs('cookies', cookies);
       }
 
+      prefs.setPrefs('userInfo', jsonEncode(userInfo));
+
       print("Login successful. User info and cookies saved.");
+      return true;
     } else {
+      if(loginResponse.statusCode==401){
+        _message = loginResponse.body;
+      }
       print("Login failed with status code: ${loginResponse.statusCode}");
       print("Response: ${loginResponse.body}");
     }
+    } catch(e){
+        _message = '$e';
+        print(e);
+      return false;
+    }
+    return false;
   }
 
   // Login method wrapper to handle void callback
   void _handleLogin() {
     if (!_isLoading) {
       _login();
-      loginCustomer(_emailController.text, _passwordController.text);
     }
   }
 
@@ -103,8 +111,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
     });
-    try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+    //try {
+      /*UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
@@ -114,6 +122,14 @@ class _LoginScreenState extends State<LoginScreen> {
           _message = 'Email not verified. Check your inbox.';
           _isLoading = false;
         });
+        return;
+      }*/
+
+      bool loginSuccess = await loginCustomer(_emailController.text, _passwordController.text);
+      setState(() {
+        _isLoading = false;
+      });
+      if (!loginSuccess){
         return;
       }
 
@@ -130,23 +146,23 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        _message = 'Login Error: ${e.message}';
+    //} /*on FirebaseAuthException*/ catch (e) {
+    /*  setState(() {
+        _message = 'Login Error: $e';
         _isLoading = false;
       });
-    }
+    }*/
   }
 
   // Google sign-in method wrapper
   void _handleGoogleSignIn() {
     if (!_isLoading) {
-      _googleSignInMethod();
+      //_googleSignInMethod();
     }
   }
 
   // Updated Google sign-in method
-  Future<void> _googleSignInMethod() async {
+  /*Future<void> _googleSignInMethod() async {
     setState(() {
       _isLoading = true;
     });
@@ -189,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
       });
     }
-  }
+  }*/
 
   // Forgot password method wrapper
   void _handleForgotPassword() {
@@ -198,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _forgotPassword() async {
     try {
-      await _auth.sendPasswordResetEmail(email: _emailController.text);
+      //await _auth.sendPasswordResetEmail(email: _emailController.text);
       setState(() {
         _message = 'Password reset email sent.';
       });
@@ -211,10 +227,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Resend verification email method wrapper
   void _handleResendVerification() {
-    _resendVerificationEmail();
+    //_resendVerificationEmail();
   }
 
-  Future<void> _resendVerificationEmail() async {
+  /*Future<void> _resendVerificationEmail() async {
     User? user = _auth.currentUser;
 
     if (user != null && !user.emailVerified) {
@@ -223,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _message = 'Verification email sent again. Please check your inbox.';
       });
     }
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {

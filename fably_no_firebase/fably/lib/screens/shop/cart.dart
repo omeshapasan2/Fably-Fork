@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'checkout_screen.dart';
 import '../auth/login.dart';
+import '../../utils/requests.dart';
+import '../../utils/prefs.dart';
 
 /*void main() {
   runApp(MyApp());
@@ -74,22 +76,30 @@ class _CartPageState extends State<CartPage> {
     return value;
   }
 
-  Future<void> fetchWebContent() async{
+  void _showMessage(String message) {
+    print(message);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> fetchCartContent() async{
+    _showMessage("Fetching cart Items...");
+    final requests = BackendRequests();
+    final prefs = Prefs();
     String cookies = '';
     Map userInfo = {};
-    getPrefs('cookies').then((c){
-      cookies = c ?? '';
-      
-    });
-    getPrefs('userInfo').then((c){
-      String userInfoStr = c ?? '{}';
-      userInfo = jsonDecode(userInfoStr);
-      
-    });
+    cookies = await prefs.getPrefs('cookies') ?? '';
+    String? info = await prefs.getPrefs('userInfo');
+    userInfo = jsonDecode(info ?? '{}');
+    /*
+    _showMessage("test after cookies and userInfo");
+    _showMessage("Cookies: $cookies");
+    _showMessage("userInfo: $userInfo");
+    _showMessage("test after the 2 prints");*/
     //final url = Uri.parse('http://152.53.119.239:5000/products');
-    final url = Uri.parse('127.0.0.1:5000/get_cart/${userInfo['_id']}');
+    //final url = Uri.parse('127.0.0.1:5000/get_cart/${userInfo['_id']}');
 
     try {
+      /*
       final response = await http.get(
         url,
         headers: {
@@ -97,7 +107,13 @@ class _CartPageState extends State<CartPage> {
         },
         );
       print('Response status: ${response.statusCode}');
-      print(response.body);
+      print(response.body);*/
+      final response = await requests.getRequest(
+        'get_cart/${userInfo['_id']}',
+        headers: {
+          'Content-Type':'application/json'
+        }
+        );
       if (response.statusCode == 200) {
         setState(() {
           List<dynamic> jsonData = jsonDecode(response.body);
@@ -122,29 +138,15 @@ class _CartPageState extends State<CartPage> {
   }
 
   Future<bool> removeFromCart(String id, int quantity) async {
+    final requests = BackendRequests();
+    final prefs = Prefs();
     String cookies = '';
     Map userInfo = {};
-    getPrefs('cookies').then((c){
-      cookies = c ?? '';
-      
-    });
-    getPrefs('userInfo').then((c){
-      String userInfoStr = c ?? '{}';
-      userInfo = jsonDecode(userInfoStr);
-      
-    });
-    // Step 1: Retrieve the CSRF token
-    final csrfUrl = Uri.parse('http://127.0.0.1:5000/get-csrf-token');
-    final csrfResponse = await http.get(csrfUrl);
-    
-    if (csrfResponse.statusCode != 200) {
-      throw Exception("Failed to fetch CSRF token: ${csrfResponse.statusCode}");
-    }
-    
-    // Assume the CSRF token is returned as plain text
-    final csrfToken = csrfResponse.body.trim();
-    print("CSRF Token: $csrfToken");
+    cookies = await prefs.getPrefs('cookies') ?? '';
+    userInfo = jsonDecode( await prefs.getPrefs('userInfo') ?? '{}');
 
+    // Step 1: Retrieve the CSRF token
+    
     // Step 2: Prepare the login data as JSON
     final changePayload = jsonEncode({
       'item_id': id,
@@ -152,6 +154,7 @@ class _CartPageState extends State<CartPage> {
     });
 
     // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
+    /*
     final url = Uri.parse('http://127.0.0.1:5000/remove_from_cart/${userInfo["_id"]}/');
     final changeResponse = await http.post(
       url,
@@ -161,8 +164,15 @@ class _CartPageState extends State<CartPage> {
         "Cookies": cookies
       },
       body: changePayload,
+    );*/
+    final changeResponse = await requests.postRequest(
+      'remove_from_cart/${userInfo["_id"]}/',
+      body:
+        {
+          'item_id': id,
+          'quantity': quantity,
+        }
     );
-
     // Step 4: Handle the login response
     if (changeResponse.statusCode == 200) {
       // Parse the returned user info
@@ -197,23 +207,23 @@ class _CartPageState extends State<CartPage> {
 
   // Remove an item from the cart
   void removeItem(int index) {
+    _showMessage("removed item");
     bool status = false;
     removeFromCart(cartItems[index]['_id'], 1).then((s){
       status = s;
-    });
-
-    if (status == false){
-      print("An error occured whie trying to delete cart item");
-    } else{
-      setState(() {
-        cartItems[index]['quantity']-=1;
-      });
-      if (cartItems[index]['quantity']>=0){
+      if (status == false){
+        print("An error occured whie trying to delete cart item");
+      } else{
         setState(() {
-          cartItems.removeAt(index);
+          cartItems[index]['quantity']-=1;
         });
-      }
-    }    
+        if (cartItems[index]['quantity']<=0){
+          setState(() {
+            cartItems.removeAt(index);
+          });
+        }
+      }    
+    });
   }
 
   void checkLoggedIn(context){
@@ -230,104 +240,13 @@ class _CartPageState extends State<CartPage> {
   @override
   void initState() {
     super.initState();
-    
-    cartItems = [
-    {
-        "_id": "67a8a99c364485eb1bc0cb44",
-        "category": "Men's Clothing",
-        "description": "The fabric, made from recycled polyester, absorb and wicks away perspiration for a drier feeling. It dries more quickly than a cotton T-shirt.\r\n\r\nOur design team developed this breathable men's running T-shirt to keep you dry in warm weather when running",
-        "name": "Men's Running Quick Dry T-Shirt - Red",
-        "photos": [
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739106715/mjk56p7ch1kof9dhtvux.png"
-        ],
-        "price": 17.7,
-        "stock_quantity": 112
-    },
-    {
-        "_id": "67a8b40ca037601816cd03a1",
-        "category": "Men's Clothing",
-        "description": "King Street Men's Long Sleeve Stripe Formal Shirt",
-        "name": "King Street Men's Long Sleeve Stripe Formal Shirt",
-        "photos": [
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739109386/yrkxruxwbxdfgve8aoig.jpg"
-        ],
-        "price": 3500.0,
-        "stock_quantity": 20
-    },
-    {
-        "_id": "67a8b4b6a037601816cd03a2",
-        "category": "Women's Clothing",
-        "description": "Envogue DAZZLE Women's Chic Party Dress",
-        "name": "Envogue DAZZLE Women's Chic Party Dress",
-        "photos": [
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739109557/it7qry2yqjtsrrxto0af.jpg",
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739109558/lxhcg9puius4ijsv8eyh.jpg"
-        ],
-        "price": 4500.0,
-        "stock_quantity": 35
-    },
-    {
-        "_id": "67a8b51ea037601816cd03a3",
-        "category": "Footwear",
-        "description": "Men's Chic Casual Sneakers",
-        "name": "Men's Chic Casual Sneakers",
-        "photos": [
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739109660/qypom6lveyvrddobnzzi.jpg",
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739109661/eeeknnubcldbd5bszz7g.jpg",
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739109662/m69x6oacgs8o28wy4xqq.jpg"
-        ],
-        "price": 8750.0,
-        "stock_quantity": 15
-    },
-    {
-        "_id": "67a8b62fa037601816cd03a4",
-        "category": "Footwear",
-        "description": "Modano Women's Chic Casual Sandal",
-        "name": "Modano Women's Chic Casual Sandal",
-        "photos": [
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739109935/k2vdelvfd7x0mkhkkod6.jpg"
-        ],
-        "price": 3990.0,
-        "stock_quantity": 25
-    },
-    {
-        "_id": "67a8b698a037601816cd03a5",
-        "category": "Footwear",
-        "description": "Modano Women's Chic Casual Sandal Heels",
-        "name": "Modano Women's Chic Casual Sandal Heels",
-        "photos": [
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739110039/yi7dlxmknt1vef39mfoq.jpg"
-        ],
-        "price": 4350.0,
-        "stock_quantity": 35
-    },
-    {
-        "_id": "67a8b75fa037601816cd03a6",
-        "category": "Kids' Clothing",
-        "description": "Miss Modano Kids Girls Short Sleeve Casual Frock",
-        "name": "Miss Modano Kids Girls Short Sleeve Casual Frock",
-        "photos": [
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739110238/qmmqgx1leab7kic7pmqg.jpg"
-        ],
-        "price": 7750.0,
-        "stock_quantity": 30
-    },
-    {
-        "_id": "67a8b80ba037601816cd03a7",
-        "category": "Accessories",
-        "description": "TITAN Men's Watch",
-        "name": "TITAN Men's Watch",
-        "photos": [
-            "https://res.cloudinary.com/dldgeyki5/image/upload/v1739110411/b3hyvoxgcxkhtfsqquqy.jpg"
-        ],
-        "price": 24990.0,
-        "stock_quantity": 5
-    }
-];
-    fetchWebContent();
-    for (int i=0;i<cartItems.length;i++) {
-      cartItems[i]['quantity'] = 1; // Add or update the 'amount' field to 1
-    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+    fetchCartContent();
+  });    
+    /*for (int i=0;i<cartItems.length;i++) {
+      cartItems[i]['quantity'] = cartItems[i]['quantity']; // Add or update the 'amount' field to 1
+    }*/
   }
 
   @override
@@ -413,7 +332,7 @@ class _CartPageState extends State<CartPage> {
                           //label: 'Like',
                         ),
                         SlidableAction(
-                          onPressed: (context) => removeItem(index),
+                          onPressed: (context) { removeItem(index);},
                           foregroundColor: Colors.white,
                           backgroundColor: Colors.black,
                           icon: Icons.delete,

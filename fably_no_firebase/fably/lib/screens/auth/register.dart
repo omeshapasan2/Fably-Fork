@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+//import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // For JSON decoding, if needed
 import 'dart:async';
 import '../home/home.dart';
 import 'login.dart';
-import 'auth_widget.dart';
+import 'auth_widget.dart';// Import for AreYouScreen
+import '../../utils/user_preferences.dart';
+import '../../utils/requests.dart';
+import '../../utils/prefs.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,7 +19,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  //final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -26,9 +29,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  Future<void> registerCustomer(String email, String password) async {
+  Future<bool> registerCustomer(String email, String password) async {
+    final requests = BackendRequests();
+    final prefs = Prefs();
   // Step 1: Retrieve the CSRF token
-  final csrfUrl = Uri.parse('http://127.0.0.1:5000/get-csrf-token');
+  /*final csrfUrl = Uri.parse('http://127.0.0.1:5000/get-csrf-token');
   final csrfResponse = await http.get(csrfUrl);
   
   if (csrfResponse.statusCode != 200) {
@@ -38,8 +43,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Assume the CSRF token is returned as plain text
   final csrfToken = csrfResponse.body.trim();
   print("CSRF Token: $csrfToken");
-
+*/
+  
   // Step 2: Prepare the login data as JSON
+  /*
   final loginPayload = jsonEncode({
     'email': email,
     'password': password,
@@ -55,7 +62,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     },
     body: loginPayload,
   );
-
+*/
+  final registerResponse = await requests.postRequest(
+    'register_customer', 
+    body:
+      {
+        'email': email,
+        'password': password,
+      }
+    );
   // Step 4: Handle the login response
   if (registerResponse.statusCode == 200) {
     // Parse the returned user info
@@ -63,13 +78,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // Extract cookies from the response headers
     // Note: The cookie string might include additional attributes
     final String? cookies = registerResponse.headers['set-cookie'];
+    
     print("Cookies: $cookies");
+    /*if (cookies!=null){
+      prefs.setPrefs('cookies', cookies);
+    }*/
 
-    print("Login successful. User info and cookies saved.");
+    print("Register successful.");
+    return true;
   } else {
-    print("Login failed with status code: ${registerResponse.statusCode}");
+    print("Register failed with status code: ${registerResponse.statusCode}");
     print("Response: ${registerResponse.body}");
   }
+  return false;
 }
 
   // Register method
@@ -86,30 +107,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      UserCredential userCredential =
+      /*UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
-      );
+      );*/
 
-      registerCustomer(_emailController.text, _passwordController.text);
+      bool registerSuccess = await registerCustomer(_emailController.text, _passwordController.text);
+      
 
       // Send verification email
-      await userCredential.user?.sendEmailVerification();
+      //await userCredential.user?.sendEmailVerification();
 
       setState(() {
         _message = 'Account created! Check your email for verification.';
         _isLoading = false;
       });
+      if(!registerSuccess){
+        return;
+      }
 
       // Optionally, navigate to another screen or login screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
-    } on FirebaseAuthException catch (e) {
+    } /* on FirebaseAuthException*/ catch (e) {
       setState(() {
-        _message = 'Registration Error: ${e.message}';
+        _message = 'Registration Error: $e';
         _isLoading = false;
       });
     }
@@ -138,13 +163,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      final OAuthCredential credential = GoogleAuthProvider.credential(
+      /*final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
-      );
+      );*/
 
       // Sign up to Firebase with the obtained credentials
-      await _auth.signInWithCredential(credential);
+      /*await _auth.signInWithCredential(credential);*/
 
       Navigator.pushReplacement(
         context,
