@@ -241,6 +241,8 @@ class _CartPageState extends State<CartPage> {
   void initState() {
     super.initState();
 
+    cartItems = [];
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
     fetchCartContent();
   });    

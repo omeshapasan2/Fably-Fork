@@ -43,6 +43,8 @@ sellers_collection = db.sellers  # Seller/auth info
 items_collection = db.items  # Item info
 checkout_collection = db.checkouts  # Checkout data
 
+orders_collection = db['orders']
+
 customers_collection = db.customers
 
 # Login manager setup
@@ -66,6 +68,27 @@ def add_cors_headers(response):
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
     return response
 
+def clean_invalid_from_cart():
+    user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+    user_cart = user['cart']
+
+    if len(user_cart)>0:
+        for i in range(len(user_cart)):
+            item = user_cart[i]
+            try:
+                item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})# product info corrosponding to id
+                if(item['quantity']==0):
+                    result = customers_collection.update_one(
+                        {"_id": session["user_id"]},# Filter the user by id
+                        {"$pull": {"cart": item}}  # Remove the item from the cart array
+                    )
+                    continue
+            except:
+                result = customers_collection.update_one(
+                    {"_id": session["user_id"]},  # Filter the user by id
+                    {"$pull": {"cart": item}}  # Remove the item from the cart array
+                )
+                continue
 
 @app.route('/get-csrf-token', methods=['GET'])
 def get_csrf_token():# temporary solution
@@ -85,7 +108,14 @@ def home():
 def checkout():
     """Handles checkout form submission from Flutter"""
     try:
+        if not customer_logged_in(""):
+            print("Unauthorised")
+            return "Unauthorised!", 400
+        
+        
         data = request.get_json()
+
+        print (session["user_id"])
         
         # Validate required fields
         if not all(key in data for key in ["name", "address", "phone", "postalCode"]):
@@ -98,11 +128,53 @@ def checkout():
             "postalCode": data["postalCode"],
             "timestamp": datetime.utcnow()
         }
+
+        clean_invalid_from_cart()
+        user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+        user_cart = user['cart']
+            
+        order_data ={
+            "userId": session["user_id"],
+            "items": user_cart,
+            "checkoutInfo": checkout_data,
+            "orderDate": datetime.utcnow()
+        }
+            
+        orders_collection.insert_one(order_data)
+        customers_collection.update_one(
+            {"_id": ObjectId(session["user_id"])},  
+            {"$set": {"cart": []}}
+        )
+
+        return_cart = []
+        print('user_cart:',user_cart)
+        if len(user_cart)>0:
+            for i in range(len(user_cart)):
+                item = user_cart[i]
+                item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})
+                item_product["quantity"] = item["quantity"] # add the quantity attribute.
+                item_product["_id"] = str(item_product["_id"]) # convert objectid to string
+                item_product["seller_id"] = str(item_product["seller_id"]) # convert objectid to string
+                return_cart.append(item_product)
         
-        checkout_collection.insert_one(checkout_data)
+        total_cost = 0
+        email_text = "Dear Customer,<br><br>"
+        email_text += "Your order was created successfully!<br><br>"
+        email_text += "<table border=1>"
+        email_text += "<tr><th>Item</th><th>Unit Price</th><th>Quantity</th><th>Sum</th></tr>"
+        for item in return_cart:
+            total_cost += item["quantity"]*item["price"]
+            email_text += f"<tr><td>{item["name"]}</td><td>${item["price"]}</td><td>X {item["quantity"]}</td><td>${item["quantity"]*item["price"]}</td></tr>"
+        email_text += f"<tr><th colspan=3>Total</th><th>{total_cost}</th></tr>"
+        email_text += "</table>"
+
+        mail.send_email(session["email"], "Fably Checkout successful", email_text)
         return jsonify({"message": "Checkout successful!"}), 201
     
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        print(e)
         return jsonify({"error": str(e)}), 400
 
 @app.route('/checkouts', methods=['GET'])
@@ -111,6 +183,14 @@ def get_checkouts():
     """Retrieve all checkout records (Admin Only)"""
     checkouts = list(checkout_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id
     return jsonify(checkouts)
+
+@app.route('/orders/', methods=['GET'])
+@login_required
+def get_orders():
+    """Retrieve all checkout records (Admin Only)"""
+    orders = list(orders_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id
+    
+    return jsonify(orders)
 
 # ---------------- SELLER & ITEM MANAGEMENT (UNCHANGED) ----------------
 
@@ -186,7 +266,7 @@ def register_customer():
                 'created_date': datetime.utcnow(),
                 'cart':[]
             })
-            body = f"""Hello, Customer
+            body = f"""Hello, Customer<br>
 
 Thank you for Signing Up to Fably!
 """
@@ -346,15 +426,15 @@ def get_cart_items(user_id):
                 item = user_cart[i]
                 try:
                     item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})# product info corrosponding to id
-                    if(item_product==None):
+                    if(item['quantity']==0):
                         result = customers_collection.update_one(
-                            {"email": session["email"]},  # Filter the user by email
+                            {"_id": ObjectId(session["user_id"])},  # Filter the user by id
                             {"$pull": {"cart": item}}  # Remove the item from the cart array
                         )
                         continue
                 except:
                     result = customers_collection.update_one(
-                        {"email": session["email"]},  # Filter the user by email
+                        {"_id": ObjectId(session["user_id"])},  # Filter the user by id
                         {"$pull": {"cart": item}}  # Remove the item from the cart array
                     )
                     continue
@@ -483,8 +563,12 @@ TODO: add crsf token to the input
     return abort(404)
 
 def customer_logged_in(user_id):
-    if "user_id" not in session.keys() or user_id!=session["user_id"]:
-        return False
+    if user_id=="":
+        if "user_id" not in session.keys():
+            return False
+    else:
+        if "user_id" not in session.keys() or user_id!=session["user_id"]:
+            return False
     return True
 
 if __name__ == '__main__':

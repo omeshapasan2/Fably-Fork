@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import '../auth/login.dart';
+import '../../utils/requests.dart';
+import '../../utils/prefs.dart';
+
+
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
@@ -17,15 +22,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController postalCodeController = TextEditingController();
   final TextEditingController cardNumberController = TextEditingController();
   final TextEditingController expirationController = TextEditingController();
   final TextEditingController cvvController = TextEditingController();
 
   String selectedPaymentMethod = "Card";
 
+  void _showMessage(String message) {
+    print(message);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<void> submitOrder() async {
-    if (_formKey.currentState!.validate()) {
-      final url = Uri.parse('http://152.53.118.28:5000/checkout');
+    //if (_formKey.currentState!.validate()) {
+      /*final url = Uri.parse('http://152.53.118.28:5000/checkout');
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
@@ -39,7 +50,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           "cvv": cvvController.text,
           "payment_method": selectedPaymentMethod,
         }),
-      );
+      );*/
+
+      final requests = BackendRequests();
+      try{
+        final response = await requests.postRequest(
+          'checkout', 
+          body:{
+            "email": emailController.text,
+            "name": nameController.text,
+            "address": addressController.text,
+            "phone": phoneController.text,
+            "postalCode": postalCodeController.text,
+            "card_number": cardNumberController.text,
+            "expiration": expirationController.text,
+            "cvv": cvvController.text,
+            "payment_method": selectedPaymentMethod,
+          }
+        );
+        //_showMessage("body: ${response.body}");
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -47,7 +76,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ? "Order placed successfully!"
                 : "Failed to place order.")),
       );
-    }
+      
+      } catch (e){
+        _showMessage("Error: $e");
+      }
+    //}
+    
   }
 
   @override
@@ -118,6 +152,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           _buildTextField(emailController, "E-mail", r'^[^@\s]+@[^@\s]+\.[^@\s]+\$', "Enter a valid email address"),
                           _buildTextField(addressController, "Address"),
                           _buildTextField(phoneController, "Phone Number", r'^\+?[0-9]{10,15}\$', "Enter a valid phone number"),
+                          _buildTextField(postalCodeController, "Postal Code", r'^[0-9]{4,10}$', "Enter a valid postal code",
+),
                           SizedBox(height: 20),
                           _submitButton(),
                         ],

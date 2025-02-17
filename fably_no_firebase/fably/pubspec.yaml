@@ -20,6 +20,8 @@ dependencies:
   http: ^1.1.0
   liquid_pull_to_refresh: ^3.0.0
   flutter_slidable: ^4.0.0
+  #flutter_stripe: ^8.0.0
+
 
 dev_dependencies:
   flutter_test:
