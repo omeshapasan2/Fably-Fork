@@ -340,17 +340,34 @@ def get_cart_items(user_id):
         user_cart = user["cart"]
 
         return_cart = []
+        print('user_cart:',user_cart)
         if len(user_cart)>0:
-            for item in user_cart:
-                item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})# product info corrosponding to id
+            for i in range(len(user_cart)):
+                item = user_cart[i]
+                try:
+                    item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})# product info corrosponding to id
+                    if(item_product==None):
+                        result = customers_collection.update_one(
+                            {"email": session["email"]},  # Filter the user by email
+                            {"$pull": {"cart": item}}  # Remove the item from the cart array
+                        )
+                        continue
+                except:
+                    result = customers_collection.update_one(
+                        {"email": session["email"]},  # Filter the user by email
+                        {"$pull": {"cart": item}}  # Remove the item from the cart array
+                    )
+                    continue
                 item_product["quantity"] = item["quantity"] # add the quantity attribute.
                 item_product["_id"] = str(item_product["_id"]) # convert objectid to string
                 item_product["seller_id"] = str(item_product["seller_id"]) # convert objectid to string
                 return_cart.append(item_product)
-        print(return_cart)
+        print("return_cart:", return_cart)
         return jsonify(return_cart)
     
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
 @app.route('/add_to_cart/<user_id>/', methods=['GET', 'POST'])
