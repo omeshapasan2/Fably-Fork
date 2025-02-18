@@ -33,36 +33,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final requests = BackendRequests();
     final prefs = Prefs();
   // Step 1: Retrieve the CSRF token
-  /*final csrfUrl = Uri.parse('http://127.0.0.1:5000/get-csrf-token');
-  final csrfResponse = await http.get(csrfUrl);
   
-  if (csrfResponse.statusCode != 200) {
-    throw Exception("Failed to fetch CSRF token: ${csrfResponse.statusCode}");
-  }
-  
-  // Assume the CSRF token is returned as plain text
-  final csrfToken = csrfResponse.body.trim();
-  print("CSRF Token: $csrfToken");
-*/
-  
-  // Step 2: Prepare the login data as JSON
-  /*
-  final loginPayload = jsonEncode({
-    'email': email,
-    'password': password,
-  });
-
-  // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
-  final loginUrl = Uri.parse('http://127.0.0.1:5000/register_customer');
-  final registerResponse = await http.post(
-    loginUrl,
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": csrfToken, // Adjust header name if needed
-    },
-    body: loginPayload,
-  );
-*/
   final registerResponse = await requests.postRequest(
     'register_customer', 
     body:

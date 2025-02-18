@@ -9,6 +9,12 @@ import 'checkout_screen.dart';
 import '../auth/login.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
+import '../scanner/scanner.dart';
+import '../home/home.dart';
+import '../home/widgets/common_drawer.dart';
+import '../shop/cart.dart';
+import '../shop/product.dart';
+import '../home/widgets/bottom_nav_bar.dart';
 
 /*void main() {
   runApp(MyApp());
@@ -38,21 +44,21 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cart Page with Slidable',
+      title: 'Wishlist Page',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: CartPage(),
+      home: WishlistPage(),
     );
   }
 }
 
-class CartPage extends StatefulWidget {
+class WishlistPage extends StatefulWidget {
   @override
-  _CartPageState createState() => _CartPageState();
+  _WishlistPageState createState() => _WishlistPageState();
 }
 
-class _CartPageState extends State<CartPage> {
+class _WishlistPageState extends State<WishlistPage> {
 
   // Mock data for the cart items
   List<Map<String, dynamic>> cartItems = [
@@ -81,8 +87,8 @@ class _CartPageState extends State<CartPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> fetchCartContent() async{
-    //_showMessage("Fetching cart Items...");
+  Future<void> fetchWishlistContent() async{
+    //_showMessage("Fetching Wishlist Items...");
     final requests = BackendRequests();
     final prefs = Prefs();
     String cookies = '';
@@ -90,26 +96,11 @@ class _CartPageState extends State<CartPage> {
     cookies = await prefs.getPrefs('cookies') ?? '';
     String? info = await prefs.getPrefs('userInfo');
     userInfo = jsonDecode(info ?? '{}');
-    /*
-    _showMessage("test after cookies and userInfo");
-    _showMessage("Cookies: $cookies");
-    _showMessage("userInfo: $userInfo");
-    _showMessage("test after the 2 prints");*/
-    //final url = Uri.parse('http://152.53.119.239:5000/products');
-    //final url = Uri.parse('127.0.0.1:5000/get_cart/${userInfo['_id']}');
-
+    
     try {
-      /*
-      final response = await http.get(
-        url,
-        headers: {
-          'Cookie': cookies, // Add cookies to headers
-        },
-        );
-      print('Response status: ${response.statusCode}');
-      print(response.body);*/
+      
       final response = await requests.getRequest(
-        'get_cart/${userInfo['_id']}',
+        'get_wishlist/${userInfo['_id']}',
         headers: {
           'Content-Type':'application/json'
         }
@@ -137,7 +128,21 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  Future<bool> removeFromCart(String id, int quantity) async {
+  Future<void> signOut() async {
+    final requests = BackendRequests();
+
+    try{
+      final response = await requests.getRequest('logout');
+      if (response.statusCode==200){
+
+      }
+    }catch (e) {
+      _showMessage('Error Loging out: $e');
+    }
+
+  }
+
+  Future<bool> removeFromWishlist(String id) async {
     final requests = BackendRequests();
     final prefs = Prefs();
     String cookies = '';
@@ -145,32 +150,11 @@ class _CartPageState extends State<CartPage> {
     cookies = await prefs.getPrefs('cookies') ?? '';
     userInfo = jsonDecode( await prefs.getPrefs('userInfo') ?? '{}');
 
-    // Step 1: Retrieve the CSRF token
-    
-    // Step 2: Prepare the login data as JSON
-    final changePayload = jsonEncode({
-      'item_id': id,
-      'quantity': quantity,
-    });
-
-    // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
-    /*
-    final url = Uri.parse('http://127.0.0.1:5000/remove_from_cart/${userInfo["_id"]}/');
-    final changeResponse = await http.post(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken, // Adjust header name if needed
-        "Cookies": cookies
-      },
-      body: changePayload,
-    );*/
     final changeResponse = await requests.postRequest(
-      'remove_from_cart/${userInfo["_id"]}/',
+      'remove_from_wishlist/${userInfo["_id"]}/',
       body:
         {
           'item_id': id,
-          'quantity': quantity,
         }
     );
     // Step 4: Handle the login response
@@ -199,31 +183,35 @@ class _CartPageState extends State<CartPage> {
     return false;
   }
 
-  // Calculate the total price of items in the cart
-  double get totalPrice =>
-      cartItems.fold(0.0, (sum, item) => sum + item['price'] * item['quantity']);
-
-  double deliveryPrice = 5.0;
-
-  // Remove an item from the cart
   void removeItem(int index) {
     _showMessage("removed item");
     bool status = false;
-    removeFromCart(cartItems[index]['_id'], 1).then((s){
-      status = s;
-      if (status == false){
-        print("An error occured whie trying to delete cart item");
-      } else{
-        setState(() {
-          cartItems[index]['quantity']-=1;
-        });
-        if (cartItems[index]['quantity']<=0){
-          setState(() {
-            cartItems.removeAt(index);
-          });
-        }
-      }    
+    removeFromWishlist(cartItems[index]['_id']).then((s){
+      setState(() {
+        cartItems.removeAt(index);
+      });
     });
+  }
+
+  void onCardTap(index){
+    final data = cartItems[index];
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductPage(product: 
+          Product(
+            id: data['_id']?.toString() ?? '', // Ensure no null id
+            name: data['name']?.toString() ?? 'Unknown', // Default to 'Unknown'
+            price: double.tryParse(data['price']?.toString() ?? '0.0') ?? 0.0, // Fallback to 0.0
+            images: List<String>.from(data['photos'] ?? []), // Ensure it's a List<String>
+            category: data['category']?.toString() ?? 'No category', // Default category
+            stockQuantity: int.tryParse(data['stock_quantity']?.toString() ?? '0') ?? 0, // Fallback to 0
+            description: data['description']?.toString() ?? 'No description', // Default description
+          )
+        ),
+      ),
+    );
   }
 
   void checkLoggedIn(context){
@@ -244,8 +232,8 @@ class _CartPageState extends State<CartPage> {
     cartItems = [];
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      fetchCartContent();
-    });    
+    fetchWishlistContent();
+  });    
     /*for (int i=0;i<cartItems.length;i++) {
       cartItems[i]['quantity'] = cartItems[i]['quantity']; // Add or update the 'amount' field to 1
     }*/
@@ -256,55 +244,36 @@ class _CartPageState extends State<CartPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text("Checkout", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
+        title: const Text('Wishlist'),
+        centerTitle: true,
+        backgroundColor: Colors.black,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_bag_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartPage(),
+                  //builder: (context) => ProductPage(product: myProduct),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              signOut();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+          ),
+        ],
       ),
-      /*appBar: AppBar(
-        title: Text("Checkout", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        /*title:Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          
-          children:[
-            backButton,
-            /*SizedBox(
-              width: 105,
-              //child:backButton,
-            ),*/
+      drawer: CommonDrawer(),
             
-            const SizedBox(height: 12),
-            const Text(
-              'Cart',
-              style: TextStyle(
-                fontSize: 35, // Set the font size
-                fontWeight: FontWeight.bold, // Optional: Set font weight
-              ),
-            ),
-          ],
-        ),*/
-        //centerTitle: true,
-        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
-        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-        automaticallyImplyLeading: false, // Prevent default back button
-        toolbarHeight: 130,
-        //leading: backButton
-      ),*/
-
-      
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
@@ -320,19 +289,6 @@ class _CartPageState extends State<CartPage> {
                       extentRatio: 0.3,
                       motion: ScrollMotion(),
                       children: [
-                        // Like Button
-                        /*SlidableAction(
-                          onPressed: (context) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${item['name']} liked!')),
-                            );
-                          },
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.black,
-                          icon: Icons.favorite,
-                          flex: 1, // Takes 1 units of space
-                          //label: 'Like',
-                        ),*/
                         SlidableAction(
                           onPressed: (context) { 
                             removeItem(index);
@@ -348,16 +304,24 @@ class _CartPageState extends State<CartPage> {
                     ),
                     child: Card(// cart item display card
                       margin: EdgeInsets.symmetric(vertical: 5.0),
+                      elevation: 4, // Adds shadow to the card
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+
                       child: ListTile(
                         leading: Image.network( // image
-                          item['photos'][0], // Replace this with your image URL
+                          item['photos'][0],
                           width: 60,
                           height: 60,
-                          fit: BoxFit.cover, // Ensures the image fills the space
+                          fit: BoxFit.cover,
                         ),
+                        onTap: () {
+                            onCardTap(index);
+                          },
                         title: Text(item['name']),
                         subtitle:
-                            Text('Price: \$${item['price']} x ${item['quantity']}'),
+                            Text('Price: \$${item['price']}'),
                       ),
                     ),
                   );
@@ -365,54 +329,7 @@ class _CartPageState extends State<CartPage> {
               ),
             ),
             Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total Items (${(cartItems.length)}):',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
-                      ),
-                      Text(
-                        '\$${(totalPrice).toStringAsFixed(2)}', // Example value for total items
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8), // Add spacing between rows
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Standard Delivery:',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
-                      ),
-                      Text(
-                        '\$${deliveryPrice.toStringAsFixed(2)}', // Example delivery cost
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8), // Add spacing between rows
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total:',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      Text(
-                        '\$${(totalPrice+deliveryPrice).toStringAsFixed(2)}', // Final total cost
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -421,23 +338,16 @@ class _CartPageState extends State<CartPage> {
                   backgroundColor: Colors.white, // Text and icon color
                 ),
                 onPressed: () {
-                  // Handle checkout logic here
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Proceeding to Checkout...')),
-                  );
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CheckoutScreen(),
-                    ),
-                  );
-                  //Navigator.pushNamed(context, '/checkout');
                 },
-                child: Text('Checkout'),
+                child: Text('Add all to cart'),
               ),
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: CommonBottomNavBar(
+        currentIndex: 1,
+        //onTap: _onNavBarTap,
       ),
     );
   }

@@ -8,15 +8,20 @@ import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 
 import '../shop/product.dart';
 import '../shop/cart.dart';
+import '../shop/wishlist.dart';
+import '../scanner/scanner.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
+import 'widgets/common_drawer.dart';
+import 'widgets/bottom_nav_bar.dart';
 
 class ProductService {
-  static const String _baseUrl = 'http://152.53.119.239:5000/products';
-
-  //static const String _baseUrl = 'http://192.168.1.7:5000/products';
+  final requests = BackendRequests();
+  
+   static String _baseUrl = 'http://192.168.1.7:5000/products';
 
   Future<List<Product>> fetchProducts() async {
+    _baseUrl = '${requests.getUrl()}/products';
     try {
       final response = await http.get(Uri.parse(_baseUrl));
 
@@ -90,6 +95,20 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Product>> futureProducts;
 
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = [
+    HomeScreen(),
+    WishlistPage(),
+    ScannerScreen(),
+  ];
+
+  void _onNavBarTap(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   // Refresh method to reload data from API
 
   Future<void> _refreshProducts() async {
@@ -99,7 +118,24 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void signOut(){}
+  void _showMessage(String message) {
+    print(message);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> signOut() async {
+    final requests = BackendRequests();
+
+    try{
+      final response = await requests.getRequest('logout');
+      if (response.statusCode==200){
+
+      }
+    }catch (e) {
+      _showMessage('Error Loging out: $e');
+    }
+
+  }
 
   @override
   void initState() {
@@ -111,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fably'),
+        title: const Text('Fably - Home'),
         centerTitle: true,
         backgroundColor: Colors.black,
         actions: [
@@ -139,7 +175,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      drawer: Drawer(
+      drawer: CommonDrawer(),
+      /*drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -160,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-      ),
+      ),*/
       body: LiquidPullToRefresh(
         color: const Color.fromARGB(255, 255, 255, 255),
         backgroundColor: const Color.fromARGB(255, 0, 0, 0),
@@ -194,8 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ProductPage(
-                            product: products[
-                                index], // Pass the product to ProductPage
+                            product: products[index], // Pass the product to ProductPage
                           ),
                         ),
                       );
@@ -210,16 +246,9 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
-        ],
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.grey,
+      bottomNavigationBar: CommonBottomNavBar(
+        currentIndex: _currentIndex,
+        //onTap: _onNavBarTap,
       ),
     );
   }

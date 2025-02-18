@@ -241,6 +241,7 @@ def login_customer():
         customer = customers_collection.find_one({'email': request.get_json()['email']})
         
         if customer and check_password_hash(customer['password'], request.get_json()['password']):
+            session["type"] = "Customer"
             session["email"] = customer["email"]
             session["user_id"] = str(customer["_id"])
             customer["_id"] = str(customer["_id"])
@@ -264,7 +265,8 @@ def register_customer():
                 'email': request.get_json()['email'],
                 'password': hashed_password,
                 'created_date': datetime.utcnow(),
-                'cart':[]
+                'cart':[],
+                'wishlist':[]
             })
             body = f"""Hello, Customer<br>
 
@@ -278,6 +280,11 @@ Thank you for Signing Up to Fably!
 @app.route('/logout')
 @login_required
 def logout():
+    if 'type' in session.keys():
+        if session['type'] == "Customer":
+            #logout_user()
+            session.clear()
+            return {"message":"Logged out succesfully!"}, 200
     logout_user()
     session.clear()
     return redirect(url_for('login'))
@@ -450,6 +457,52 @@ def get_cart_items(user_id):
         print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
+@app.route('/get_wishlist/<user_id>/', methods=['GET'])
+def get_wishlist_items(user_id):
+    try:
+        
+        if not customer_logged_in(user_id):
+            return "Unauthorised!", 400
+        
+        # Fetch the user cart
+        user = customers_collection.find_one({'_id': ObjectId(user_id)})
+
+        if "wishlist" not in user.keys():
+            customers_collection.update_one(
+                {'_id': ObjectId(user_id)},  # Match the user
+                {'$set': {'wishlist': []}}   # Add an empty wishlist
+            )
+            user = customers_collection.find_one({'_id': ObjectId(user_id)})
+        user_wishlist = user["wishlist"]
+
+
+        return_wishlist = []
+        print('user_wishlist:',user_wishlist)
+        if len(user_wishlist)>0:
+            for i in range(len(user_wishlist)):
+                item = user_wishlist[i]
+                try:
+                    item_product = items_collection.find_one({'_id': ObjectId(item)})# product info corrosponding to id
+                except Exception as e:
+                    print("item_produc fetching exception",e)
+                    result = customers_collection.update_one(
+                        {"_id": ObjectId(session["user_id"])},  # Filter the user by id
+                        {"$pull": {"wishlist": item}}  # Remove the item from the cart array
+                    )
+                    continue
+                item_product['_id'] = str(item_product["_id"])
+                item_product["seller_id"] = str(item_product["seller_id"])
+                return_wishlist.append(item_product)
+        print("return_wishlist:", return_wishlist)
+        return jsonify(return_wishlist)
+    
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+
+
 @app.route('/add_to_cart/<user_id>/', methods=['GET', 'POST'])
 def add_cart_item(user_id):
     '''
@@ -458,7 +511,6 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
-            
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -483,8 +535,6 @@ TODO: add crsf token to the input
             except Exception as e:
                 print(e)
                 item = None;
-                
-            
             
             if not item:
                 return "Error: Item not found", 404
@@ -513,6 +563,63 @@ TODO: add crsf token to the input
     return abort(404)
 
 
+@app.route('/add_to_wishlist/<user_id>/', methods=['GET', 'POST'])
+def add_wishlist_item(user_id):
+    '''
+accepts input: {'item_id':'1234'}
+TODO: add crsf token to the input
+'''
+    if request.method=='POST':
+        try:
+            if not customer_logged_in(user_id):
+                return "Unauthorised!", 400
+            
+            # Fetch the user
+            print("Fetch the user wishlist")
+            user = customers_collection.find_one({'_id': ObjectId(user_id)})
+
+            #check if user exists
+            if not user:
+                return "Error: User not found", 404
+            
+            wishlist = user["wishlist"]
+
+            item_id = request.get_json()["item_id"]
+
+            print("Item Id:",item_id)
+
+            #check if item exists
+            try:
+                item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+                print(item)
+            except Exception as e:
+                print(e)
+                item = None;
+            
+            if not item:
+                return "Error: Item not found", 404
+
+            # Check if item is already in wishlist. if so do not add.
+            if item_id in wishlist:
+                return "Already Exists", 200
+            else:
+                wishlist.append(item_id)
+                
+            customers_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'wishlist': wishlist}}
+            )
+
+            return "Success!", 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
+
 @app.route('/remove_from_cart/<user_id>/', methods=['GET', 'POST'])
 def remove_cart_item(user_id):
     '''
@@ -521,7 +628,6 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
-            
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -555,6 +661,92 @@ TODO: add crsf token to the input
             )
 
             return "Success!", 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
+@app.route('/remove_from_wishlist/<user_id>/', methods=['GET', 'POST'])
+def remove_wishlist_item(user_id):
+    '''
+accepts input: {'item_id':'1234', 'quantity':1}
+'''
+    if request.method=='POST':
+        try:
+            if not customer_logged_in(user_id):
+                return "Unauthorised!", 400
+            
+            # Fetch the user
+            print("Fetch the user wishlist")
+            user = customers_collection.find_one({'_id': ObjectId(user_id)})
+
+            #check if user exists
+            if not user:
+                return "Error: User not found", 404
+            
+            wishlist = user["wishlist"]
+
+            item_id = request.get_json()["item_id"]
+
+            item = items_collection.find_one({'_id': ObjectId(item_id)})
+            #check if item exists
+            if not item:
+                return "Error: Item not found", 404
+            
+            if item_id not in wishlist:
+                return "Not Exists", 200
+            else:
+                wishlist.remove(item_id)
+
+            customers_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'wishlist': wishlist}}
+            )
+
+            return "Success!", 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
+@app.route('/in_wishlist/<user_id>/', methods=['GET', 'POST'])
+def in_wishlist(user_id):
+    '''
+accepts input: {'item_id':'1234', 'quantity':1}
+'''
+    if request.method=='POST':
+        try:
+            if not customer_logged_in(user_id):
+                return "Unauthorised!", 400
+            
+            # Fetch the user
+            print("Fetch the user wishlist")
+            user = customers_collection.find_one({'_id': ObjectId(user_id)})
+
+            #check if user exists
+            if not user:
+                return "Error: User not found", 404
+            
+            wishlist = user["wishlist"]
+
+            item_id = request.get_json()["item_id"]
+
+            item = items_collection.find_one({'_id': ObjectId(item_id)})
+            #check if item exists
+            if not item:
+                return "Error: Item not found", 404
+
+            # check if item is in wishlist
+            if item_id not in wishlist:
+                print("false")
+                return "false", 200
+            else:
+                print("true")
+                return "true", 200
         
         except Exception as e:
             import traceback

@@ -57,6 +57,7 @@ class _ProductPageState extends State<ProductPage> {
   String _selectedSize = "M";
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isWishlisted = false;
 
   Future<String?> getPrefs(pref) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -91,29 +92,7 @@ class _ProductPageState extends State<ProductPage> {
     cookies = await prefs.getPrefs('cookies') ?? '';
     String? info = await prefs.getPrefs('userInfo');
     userInfo = jsonDecode( info ?? '{}');
-    
-    // Step 1: Retrieve the CSRF token
-    
 
-    // Step 2: Prepare the login data as JSON
-    final changePayload = jsonEncode({
-      'item_id': id,
-      'quantity': quantity,
-    });
-
-    // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
-    /*
-    final url = Uri.parse('http://127.0.0.1:5000/add_to_cart/${userInfo["_id"]}/');
-    final changeResponse = await http.post(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken, // Adjust header name if needed
-        "Cookies": cookies
-      },
-      body: changePayload,
-    );
-    */
     final changeResponse = await requests.postRequest(
       'add_to_cart/${userInfo['_id']}/',
       body:{
@@ -141,7 +120,140 @@ class _ProductPageState extends State<ProductPage> {
       print("Added Item Successfully");
       return true;
     } else {
+      print("Failed to add item: ${changeResponse.statusCode}");
+      print("Response: ${changeResponse.body}");
+    }
+    return false;
+  }
+
+  Future<bool> addToWishlist(String id) async {
+    final requests = BackendRequests();
+    final prefs = Prefs();
+
+    String cookies = '';
+    Map userInfo = {};
+    cookies = await prefs.getPrefs('cookies') ?? '';
+    String? info = await prefs.getPrefs('userInfo');
+    userInfo = jsonDecode( info ?? '{}');
+    
+    final changeResponse = await requests.postRequest(
+      'add_to_wishlist/${userInfo['_id']}/',
+      body:{
+        'item_id': id,
+      }
+      );
+    // Step 4: Handle the login response
+    if (changeResponse.statusCode == 200) {
+      // Parse the returned user info
+      print(changeResponse.body);
+
+      // Extract cookies from the response headers
+      // Note: The cookie string might include additional attributes
+      final String? cookies = changeResponse.headers['set-cookie'];
+      print("Cookies: $cookies");
+
+      // Step 5: Save the user info and cookies using SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userInfo', jsonEncode(userInfo));
+      if (cookies != null) {
+        await prefs.setString('cookies', cookies);
+      }
+
+      print("Added Item Successfully");
+      if (changeResponse.body != "Success!"){
+        return false;
+      }
+      return true;
+    } else {
+      print("Failed to add item: ${changeResponse.statusCode}");
+      print("Response: ${changeResponse.body}");
+    }
+    return false;
+  }
+
+  Future<bool> removeFromWishlist(String id) async {
+    final requests = BackendRequests();
+    final prefs = Prefs();
+    String cookies = '';
+    Map userInfo = {};
+    cookies = await prefs.getPrefs('cookies') ?? '';
+    userInfo = jsonDecode( await prefs.getPrefs('userInfo') ?? '{}');
+
+    final changeResponse = await requests.postRequest(
+      'remove_from_wishlist/${userInfo["_id"]}/',
+      body:
+        {
+          'item_id': id,
+        }
+    );
+    // Step 4: Handle the login response
+    if (changeResponse.statusCode == 200) {
+      // Parse the returned user info
+      print(changeResponse.body);
+
+      // Extract cookies from the response headers
+      // Note: The cookie string might include additional attributes
+      final String? cookies = changeResponse.headers['set-cookie'];
+      print("Cookies: $cookies");
+
+      // Step 5: Save the user info and cookies using SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userInfo', jsonEncode(userInfo));
+      if (cookies != null) {
+        await prefs.setString('cookies', cookies);
+      }
+
+      print("Removed Item Successfully");
+      return true;
+    } else {
       print("Failed to remove item: ${changeResponse.statusCode}");
+      print("Response: ${changeResponse.body}");
+    }
+    return false;
+  }
+
+  Future<bool> inWishlist(String id) async {
+    final requests = BackendRequests();
+    final prefs = Prefs();
+
+    String cookies = '';
+    Map userInfo = {};
+    cookies = await prefs.getPrefs('cookies') ?? '';
+    String? info = await prefs.getPrefs('userInfo');
+    userInfo = jsonDecode( info ?? '{}');
+    
+    final changeResponse = await requests.postRequest(
+      'in_wishlist/${userInfo['_id']}/',
+      body:{
+        'item_id': id,
+      }
+      );
+    // Step 4: Handle the login response
+    if (changeResponse.statusCode == 200) {
+      // Parse the returned user info
+      print(changeResponse.body);
+
+      // Extract cookies from the response headers
+      // Note: The cookie string might include additional attributes
+      final String? cookies = changeResponse.headers['set-cookie'];
+      print("Cookies: $cookies");
+
+      // Step 5: Save the user info and cookies using SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userInfo', jsonEncode(userInfo));
+      if (cookies != null) {
+        await prefs.setString('cookies', cookies);
+      }
+
+      print("Added Item Successfully");
+      if (changeResponse.body == "true"){
+        return true;
+      } else if (changeResponse.body == "false"){
+        return false;
+      }
+      return true;
+    } else {
+      print("Failed to get status: ${changeResponse.statusCode}");
       print("Response: ${changeResponse.body}");
     }
     return false;
@@ -165,6 +277,17 @@ class _ProductPageState extends State<ProductPage> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      inWishlist(widget.product.id).then((x){
+        setState((){
+          _isWishlisted = x;
+        });
+      });
+    });
   }
 
   @override
@@ -329,12 +452,25 @@ class _ProductPageState extends State<ProductPage> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(
-                            Icons.favorite_border,
-                            color: Colors.white,
+                          icon: Icon(
+                            _isWishlisted ? Icons.favorite : Icons.favorite_border,
+                            color: _isWishlisted ? Colors.redAccent :Colors.white,
                           ),
                           onPressed: () {
-                            // Implement favorites functionality
+                            if (!_isWishlisted){
+                              addToWishlist(widget.product.id).then((x){
+                                setState((){
+                                  _isWishlisted = true;
+                                });
+                              });
+
+                            } else{
+                              removeFromWishlist(widget.product.id).then((x){
+                                setState((){
+                                  _isWishlisted = false;
+                                });
+                              });
+                            }
                           },
                         ),
                       ],
