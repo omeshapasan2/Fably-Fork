@@ -4,7 +4,8 @@ from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
+import hashlib
 import config
 from models import Seller
 from werkzeug.utils import secure_filename
@@ -15,8 +16,12 @@ from cloudinary.api import delete_resources_by_prefix
 from flask import Flask, jsonify
 from flask_pymongo import PyMongo
 from flask_cors import CORS
+import secrets
+import hmac
 
 import send_email as mail
+
+reset_tokens = {}
 
 def custom_cors_origin(origin):
     # Allow all origins
@@ -126,7 +131,7 @@ def checkout():
             "address": data["address"],
             "phone": data["phone"],
             "postalCode": data["postalCode"],
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now()
         }
 
         clean_invalid_from_cart()
@@ -137,7 +142,7 @@ def checkout():
             "userId": session["user_id"],
             "items": user_cart,
             "checkoutInfo": checkout_data,
-            "orderDate": datetime.utcnow()
+            "orderDate": datetime.now()
         }
             
         orders_collection.insert_one(order_data)
@@ -206,7 +211,7 @@ def register():
                 'email': request.form['email'],
                 'password': hashed_password,
                 'phone': request.form['phone'],
-                'created_date': datetime.utcnow()
+                'created_date': datetime.now()
             })
             body = f"""Hello, {request.form['name']}
 
@@ -245,8 +250,14 @@ def login_customer():
             session["email"] = customer["email"]
             session["user_id"] = str(customer["_id"])
             customer["_id"] = str(customer["_id"])
-            
-            response = make_response(jsonify(customer))
+
+            return_data = {
+                '_id': str(customer['_id']),
+                'email': customer["email"],
+                'name': ''
+            }
+
+            response = make_response(jsonify(return_data))
             #response.set_cookie('test','test_cookie', httponly=False, samesite='Lax', secure=False)
             
             return response, 200
@@ -264,7 +275,7 @@ def register_customer():
                 #'name': request.get_json()['name'],
                 'email': request.get_json()['email'],
                 'password': hashed_password,
-                'created_date': datetime.utcnow(),
+                'created_date': datetime.now(),
                 'cart':[],
                 'wishlist':[]
             })
@@ -332,8 +343,8 @@ def add_item():
             'category': category,
             'photos': photos,
             'stock_quantity': stock_quantity,
-            'created_at': datetime.utcnow(),
-            'updated_at': datetime.utcnow()
+            'created_at': datetime.now(),
+            'updated_at': datetime.now()
         }
         
         db.items.insert_one(item_data)
@@ -362,7 +373,7 @@ def edit_item(item_id):
             "price": float(request.form.get("price")),
             "category": request.form.get("category"),
             "stock_quantity": int(request.form.get("stock_quantity")),
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now()
         }
         
         result = items_collection.update_one(
@@ -753,6 +764,97 @@ accepts input: {'item_id':'1234', 'quantity':1}
             print(traceback.format_exc())
             return ("error: "+str(e)), 500
     return abort(404)
+
+@app.route('/forgot_password', methods = ['POST'])
+def forgot_password():
+    if request.method == 'POST':
+        try:
+            email = request.get_json()['email']
+
+            # Fetch the user
+            try:
+                customer = customers_collection.find_one({'email': email})
+            
+            except Exception as e:
+                print(e)
+                return "No such customer", 404
+            
+            # code to generate a token and email the url belongin to that token to the customer
+            raw_token = secrets.token_urlsafe(32)
+            hashed_token = hashlib.sha256(raw_token.encode()).hexdigest()
+
+            # Save token to the database with expiry
+            expiry = datetime.now() + timedelta(hours=1)  # Token valid for 1 hour
+            
+            reset_tokens[str(customer['_id'])] = {
+                'token':hashed_token, 
+                'expires':expiry
+            }
+
+            reset_url = url_for('password_reset', _external=True, token=raw_token, uid=str(customer['_id']))
+
+            email_text = "Dear Customer,<br><br>"
+            email_text += "Given below is the url for your password reset. If you did not request this request then please ignore this email.<br>"
+            email_text += f"Please note that the password expires at {expiry.day}-{expiry.month}-{expiry.year} {expiry.strftime("%I:%M:%S %p")}<br><br>"
+            email_text += f"<a href=\"{reset_url}\" >Password Reset link</a>"
+
+            mail.send_email(customer['email'], 'Reset Fably Password', email_text)
+
+            return "Success!", 200
+
+            
+        except Exception as e:
+            print(e)
+            return "An Unexpected error occured", 500
+
+        
+    return "Wrong method", 500
+
+@app.route('/password_reset', methods = ['GET', 'POST'])
+def password_reset():
+    token = request.args.get('token')
+    uid = request.args.get('uid')
+
+    if not token or not uid:
+        return "Invalid request", 400
+    
+    if uid not in reset_tokens.keys():
+        return "token not found", 404
+    
+    if datetime.now()> reset_tokens[uid]['expires']:
+        return "Expired Token", 400
+    
+    if not verify_hash_value(token, reset_tokens[uid]['token']):
+        return "Invalid Token", 400
+    
+       
+    # code to return the reset password page.
+    if request.method == 'POST':
+        # Extract form data
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Validate passwords
+        if new_password != confirm_password:
+            return "Passwords do not match", 400
+
+        # Update the user's password in the database
+        hashed_password = generate_password_hash(new_password)
+        uid = request.args.get('uid')  # Extract UID from the query parameter
+        customers_collection.update_one({'_id': ObjectId(uid)}, {'$set': {'password': hashed_password}})
+
+        
+        
+        return "Password successfully reset!"
+    
+    return render_template("reset_password.html.j2"), 200
+
+def verify_hash_value(raw_value, hashed_value):
+    hashed_user_token = hashlib.sha256(raw_value.encode()).hexdigest()
+    if hmac.compare_digest(hashed_user_token, hashed_value) :
+        return True
+    else:
+        return False
 
 def customer_logged_in(user_id):
     if user_id=="":

@@ -129,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try{
       final response = await requests.getRequest('logout');
       if (response.statusCode==200){
-
+        _showMessage('Logged out successfully');
       }
     }catch (e) {
       _showMessage('Error Loging out: $e');

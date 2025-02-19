@@ -32,12 +32,13 @@ class BackendRequests {
       final requestUrl = Uri.parse('$url/$endpoint');
       final response = await http.get(requestUrl, headers: headers);
 
-      if (response.statusCode == 200) {
+      /*if (response.statusCode == 200) {
         return response; // Return the full HTTP response
       } else {
         print('Failed to fetch data: ${response.statusCode}');
         throw Exception('Failed to fetch data: ${response.statusCode}');
-      }
+      }*/
+      return response;
     } catch (e) {
       throw Exception('Error occurred during GET request: $e');
     }
@@ -61,12 +62,13 @@ class BackendRequests {
         body: jsonEncode(body), // Encode body to JSON format
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      /*if (response.statusCode == 200 || response.statusCode == 201) {
         return response; // Return the full HTTP response
       } else {
 
         throw Exception('Failed to post data: ${response.statusCode}');
-      }
+      }*/
+      return response;
     } catch (e) {
       throw Exception('Error occurred during POST request: $e');
     }

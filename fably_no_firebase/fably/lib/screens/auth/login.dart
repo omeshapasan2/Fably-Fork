@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return true;
     } else {
       if(loginResponse.statusCode==401){
-        _message = loginResponse.body;
+        _message = "Incorrect Email or Password";
       }
       print("Login failed with status code: ${loginResponse.statusCode}");
       print("Response: ${loginResponse.body}");
@@ -97,6 +97,33 @@ class _LoginScreenState extends State<LoginScreen> {
       return false;
     }
     return false;
+  }
+
+  void forgotPassword(String email) async {
+    if (email==''){
+      _showMessage("Please enter your email address");
+      return;
+    }
+    final requests = BackendRequests();
+    try{
+      final response = await requests.postRequest(
+        'forgot_password',
+        body:
+          {
+            'email': email,
+          }
+      );
+
+      if (response.statusCode == 200){
+        _showMessage("Check your email for the reset passoword link");
+      } else{
+        _showMessage("Please enter your email in the field");
+      }
+    }
+    catch (e) {
+      _showMessage("Please enter your email in the field");
+      _showMessage('$e');
+    }
   }
 
   // Login method wrapper to handle void callback
@@ -209,10 +236,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Forgot password method wrapper
   void _handleForgotPassword() {
-    _forgotPassword();
+    //_forgotPassword();
+    forgotPassword(_emailController.text);
   }
 
-  Future<void> _forgotPassword() async {
+  /*Future<void> _forgotPassword() async {
     try {
       //await _auth.sendPasswordResetEmail(email: _emailController.text);
       setState(() {
@@ -223,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _message = 'Error: ${e.toString()}';
       });
     }
-  }
+  }*/
 
   // Resend verification email method wrapper
   void _handleResendVerification() {

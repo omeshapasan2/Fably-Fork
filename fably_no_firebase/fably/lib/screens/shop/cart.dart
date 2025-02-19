@@ -66,7 +66,7 @@ class _CartPageState extends State<CartPage> {
   
 
   String content = '';
-  bool isLoading = false;
+  bool isLoading = true;
 
   //List<Map<String, dynamic>> jsonObject = jsonDecode(fetchWebContent());
 
@@ -258,7 +258,7 @@ class _CartPageState extends State<CartPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         iconTheme: IconThemeData(color: Colors.white),
-        title: Text("Checkout", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text("Cart", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -305,7 +305,7 @@ class _CartPageState extends State<CartPage> {
       ),*/
 
       
-      body: Padding(
+      body: isLoading ? Center(child: CircularProgressIndicator()) : cartItems.isEmpty ? Center(child: Text('No Items in Cart')) : Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
@@ -417,6 +417,21 @@ class _CartPageState extends State<CartPage> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  textStyle: const TextStyle(fontSize: 25),
+                  minimumSize: const Size.fromHeight(50),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+                  );
+                },
+                child: const Text('Checkout'),
+              ),
+              /*child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.black, // Background color
                   backgroundColor: Colors.white, // Text and icon color
                 ),
@@ -434,7 +449,7 @@ class _CartPageState extends State<CartPage> {
                   //Navigator.pushNamed(context, '/checkout');
                 },
                 child: Text('Checkout'),
-              ),
+              ),*/
             ),
           ],
         ),

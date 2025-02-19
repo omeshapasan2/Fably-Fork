@@ -72,7 +72,7 @@ class _WishlistPageState extends State<WishlistPage> {
   
 
   String content = '';
-  bool isLoading = false;
+  bool isLoading = true;
 
   //List<Map<String, dynamic>> jsonObject = jsonDecode(fetchWebContent());
 
@@ -134,7 +134,7 @@ class _WishlistPageState extends State<WishlistPage> {
     try{
       final response = await requests.getRequest('logout');
       if (response.statusCode==200){
-
+        _showMessage('Logged out successfully');
       }
     }catch (e) {
       _showMessage('Error Loging out: $e');
@@ -274,7 +274,7 @@ class _WishlistPageState extends State<WishlistPage> {
       ),
       drawer: CommonDrawer(),
             
-      body: Padding(
+      body: isLoading ? Center(child: CircularProgressIndicator()) : cartItems.isEmpty ? Center(child: Text('No Items in Wishlist')) : Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
@@ -334,13 +334,28 @@ class _WishlistPageState extends State<WishlistPage> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  textStyle: const TextStyle(fontSize: 25),
+                  minimumSize: const Size.fromHeight(50),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+                  );
+                },
+                child: const Text('Add all to cart'),
+              ),
+              /*child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.black, // Background color
                   backgroundColor: Colors.white, // Text and icon color
                 ),
                 onPressed: () {
                 },
                 child: Text('Add all to cart'),
-              ),
+              ),*/
             ),
           ],
         ),
