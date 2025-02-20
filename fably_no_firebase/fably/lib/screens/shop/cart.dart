@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'checkout_screen.dart';
 import '../auth/login.dart';
+import '../shop/product.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 
@@ -203,19 +204,19 @@ class _CartPageState extends State<CartPage> {
   double get totalPrice =>
       cartItems.fold(0.0, (sum, item) => sum + item['price'] * item['quantity']);
 
-  double deliveryPrice = 5.0;
+  double deliveryPrice = 0.0;
 
   // Remove an item from the cart
-  void removeItem(int index) {
+  void removeItem(int index, {int count = 1}) {
     _showMessage("removed item");
     bool status = false;
-    removeFromCart(cartItems[index]['_id'], 1).then((s){
+    removeFromCart(cartItems[index]['_id'], count).then((s){
       status = s;
       if (status == false){
         print("An error occured whie trying to delete cart item");
       } else{
         setState(() {
-          cartItems[index]['quantity']-=1;
+          cartItems[index]['quantity']-=count;
         });
         if (cartItems[index]['quantity']<=0){
           setState(() {
@@ -235,6 +236,27 @@ class _CartPageState extends State<CartPage> {
         ),
       );
     }
+  }
+
+  void onCardTap(index){
+    final data = cartItems[index];
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductPage(product: 
+          Product(
+            id: data['_id']?.toString() ?? '', // Ensure no null id
+            name: data['name']?.toString() ?? 'Unknown', // Default to 'Unknown'
+            price: double.tryParse(data['price']?.toString() ?? '0.0') ?? 0.0, // Fallback to 0.0
+            images: List<String>.from(data['photos'] ?? []), // Ensure it's a List<String>
+            category: data['category']?.toString() ?? 'No category', // Default category
+            stockQuantity: int.tryParse(data['stock_quantity']?.toString() ?? '0') ?? 0, // Fallback to 0
+            description: data['description']?.toString() ?? 'No description', // Default description
+          )
+        ),
+      ),
+    );
   }
 
   @override
@@ -320,23 +342,21 @@ class _CartPageState extends State<CartPage> {
                       extentRatio: 0.3,
                       motion: ScrollMotion(),
                       children: [
-                        // Like Button
-                        /*SlidableAction(
+                        SlidableAction(
                           onPressed: (context) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${item['name']} liked!')),
-                            );
+                            removeItem(index);
                           },
                           foregroundColor: Colors.white,
                           backgroundColor: Colors.black,
-                          icon: Icons.favorite,
+                          icon: Icons.exposure_minus_1,
                           flex: 1, // Takes 1 units of space
-                          //label: 'Like',
-                        ),*/
+                          //label: 'Remove One',
+                        ),
                         SlidableAction(
                           onPressed: (context) { 
-                            removeItem(index);
+                            removeItem(index, count: item['quantity']);
                             },
+                          //label: 'Remove All',
                           foregroundColor: Colors.white,
                           backgroundColor: Colors.black,
                           icon: Icons.delete,
@@ -348,6 +368,7 @@ class _CartPageState extends State<CartPage> {
                     ),
                     child: Card(// cart item display card
                       margin: EdgeInsets.symmetric(vertical: 5.0),
+                      
                       child: ListTile(
                         leading: Image.network( // image
                           item['photos'][0], // Replace this with your image URL
@@ -356,8 +377,11 @@ class _CartPageState extends State<CartPage> {
                           fit: BoxFit.cover, // Ensures the image fills the space
                         ),
                         title: Text(item['name']),
+                        onTap: () {
+                            onCardTap(index);
+                          },
                         subtitle:
-                            Text('Price: \$${item['price']} x ${item['quantity']}'),
+                            Text('Price: \$${item['price']} x ${item['quantity']} = \$${(item['price'] * item['quantity']).toStringAsFixed(2)}'),
                       ),
                     ),
                   );

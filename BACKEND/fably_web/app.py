@@ -161,17 +161,21 @@ def checkout():
                 item_product["_id"] = str(item_product["_id"]) # convert objectid to string
                 item_product["seller_id"] = str(item_product["seller_id"]) # convert objectid to string
                 return_cart.append(item_product)
-        
+
+        '''
         total_cost = 0
         email_text = "Dear Customer,<br><br>"
         email_text += "Your order was created successfully!<br><br>"
         email_text += "<table border=1>"
-        email_text += "<tr><th>Item</th><th>Unit Price</th><th>Quantity</th><th>Sum</th></tr>"
+        email_text += "<tr><th>Image</th><th>Item</th><th>Unit Price</th><th>Quantity</th><th>Sum</th></tr>"
         for item in return_cart:
             total_cost += item["quantity"]*item["price"]
-            email_text += f"<tr><td>{item["name"]}</td><td>${item["price"]}</td><td>X {item["quantity"]}</td><td>${item["quantity"]*item["price"]}</td></tr>"
-        email_text += f"<tr><th colspan=3>Total</th><th>{total_cost}</th></tr>"
+            email_text += f"<tr><td><img src=\"{item["photos"][0]}\" alt=\"Product Image\" height=100 style=\"display:block; margin:auto;\" \"></td><td>{item["name"]}</td><td>${item["price"]}</td><td>X {item["quantity"]}</td><td>${item["quantity"]*item["price"]}</td></tr>"
+        email_text += f"<tr><th colspan=4>Total</th><th>{total_cost}</th></tr>"
         email_text += "</table>"
+        '''
+        total_cost = sum(item["quantity"] * item["price"] for item in return_cart)
+        email_text = render_template('email_templates/order_confirmation.html', return_cart = return_cart, total_cost = total_cost)
 
         mail.send_email(session["email"], "Fably Checkout successful", email_text)
         return jsonify({"message": "Checkout successful!"}), 201
@@ -213,10 +217,11 @@ def register():
                 'phone': request.form['phone'],
                 'created_date': datetime.now()
             })
-            body = f"""Hello, {request.form['name']}
+            '''body = f"""Hello, {request.form['name']}
 
 Thank you for Signing Up to Fably!
-"""
+""" '''
+            body = render_template('email_template/register_customer.html', name = request.form['name'])
             mail.send_email(request.form["email"], "Registration to Fably", body)
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('login'))
@@ -283,6 +288,7 @@ def register_customer():
 
 Thank you for Signing Up to Fably!
 """
+            body = render_template('email_templates/register_customer.html')
             mail.send_email(request.get_json()["email"], "Registration to Fably", body)
             
             return "Success!", 200
@@ -792,11 +798,15 @@ def forgot_password():
             }
 
             reset_url = url_for('password_reset', _external=True, token=raw_token, uid=str(customer['_id']))
-
+            
+            '''
             email_text = "Dear Customer,<br><br>"
             email_text += "Given below is the url for your password reset. If you did not request this request then please ignore this email.<br>"
             email_text += f"Please note that the password expires at {expiry.day}-{expiry.month}-{expiry.year} {expiry.strftime("%I:%M:%S %p")}<br><br>"
             email_text += f"<a href=\"{reset_url}\" >Password Reset link</a>"
+            '''
+            
+            email_text = render_template('email_templates/password_reset.html', expiry = expiry, reset_url = reset_url)
 
             mail.send_email(customer['email'], 'Reset Fably Password', email_text)
 
@@ -804,7 +814,7 @@ def forgot_password():
 
             
         except Exception as e:
-            print(e)
+            print("Error:",e)
             return "An Unexpected error occured", 500
 
         

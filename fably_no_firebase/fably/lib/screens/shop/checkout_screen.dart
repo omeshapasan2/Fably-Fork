@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../auth/login.dart';
+import '../home/home.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 
@@ -29,28 +30,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   String selectedPaymentMethod = "Card";
 
+  bool processingCheckout = false;
+
   void _showMessage(String message) {
     print(message);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> submitOrder() async {
-    //if (_formKey.currentState!.validate()) {
-      /*final url = Uri.parse('http://152.53.118.28:5000/checkout');
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": emailController.text,
-          "name": nameController.text,
-          "address": addressController.text,
-          "phone": phoneController.text,
-          "card_number": cardNumberController.text,
-          "expiration": expirationController.text,
-          "cvv": cvvController.text,
-          "payment_method": selectedPaymentMethod,
-        }),
-      );*/
+    if (processingCheckout){
+      return;
+    }
+    setState(() {
+      processingCheckout = true;
+    });
+    _showMessage("Processing...");
 
       final requests = BackendRequests();
       try{
@@ -68,19 +62,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             "payment_method": selectedPaymentMethod,
           }
         );
-        //_showMessage("body: ${response.body}");
+        if (response.statusCode == 201){
+          _showMessage("Order placed successfully!");
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(response.statusCode == 201
-                ? "Order placed successfully!"
-                : "Failed to place order.")),
-      );
+          setState(() {
+            processingCheckout = false;
+          });
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(),
+            ),
+          );
+
+        }else{
+          _showMessage("Failed to place order.");
+        }
+
+        
+        
       
       } catch (e){
         _showMessage("Error: $e");
       }
-    //}
+
+      setState(() {
+        processingCheckout = false;
+      });
     
   }
 

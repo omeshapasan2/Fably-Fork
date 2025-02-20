@@ -58,6 +58,7 @@ class _ProductPageState extends State<ProductPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _isWishlisted = false;
+  bool _isLoading = true;
 
   Future<String?> getPrefs(pref) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -245,7 +246,7 @@ class _ProductPageState extends State<ProductPage> {
         await prefs.setString('cookies', cookies);
       }
 
-      print("Added Item Successfully");
+      //print("Added Item Successfully");
       if (changeResponse.body == "true"){
         return true;
       } else if (changeResponse.body == "false"){
@@ -285,6 +286,7 @@ class _ProductPageState extends State<ProductPage> {
       inWishlist(widget.product.id).then((x){
         setState((){
           _isWishlisted = x;
+          _isLoading = false;
         });
       });
     });
@@ -294,7 +296,7 @@ class _ProductPageState extends State<ProductPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -458,6 +460,9 @@ class _ProductPageState extends State<ProductPage> {
                           ),
                           onPressed: () {
                             if (!_isWishlisted){
+                              setState((){
+                                _isWishlisted = true;
+                              });
                               addToWishlist(widget.product.id).then((x){
                                 setState((){
                                   _isWishlisted = true;
@@ -465,6 +470,9 @@ class _ProductPageState extends State<ProductPage> {
                               });
 
                             } else{
+                              setState((){
+                                _isWishlisted = false;
+                              });
                               removeFromWishlist(widget.product.id).then((x){
                                 setState((){
                                   _isWishlisted = false;

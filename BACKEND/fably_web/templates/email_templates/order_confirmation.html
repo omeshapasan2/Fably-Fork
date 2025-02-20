@@ -1,0 +1,17 @@
+Dear Customer,<br>
+<br>
+Your order was created successfully!<br>
+<br>
+<table border=1>
+    <tr><th>Image</th><th>Item</th><th>Unit Price</th><th>Quantity</th><th>Sum</th></tr>
+    {% for item in return_cart %}
+        <tr>
+            <td><img src="{{item['photos'][0]}}" alt="Product Image" height=100 style="display:block; margin:auto;" ></td>
+            <td>{{item["name"]}}</td>
+            <td>${{item["price"]}}</td>
+            <td>X {{item["quantity"]}}</td>
+            <td>${{(item["quantity"]*item["price"]) | round(2)}}</td>
+        </tr>
+    {% endfor %}
+    <tr><th colspan=4>Total</th><th>{{total_cost}}</th></tr>
+</table>

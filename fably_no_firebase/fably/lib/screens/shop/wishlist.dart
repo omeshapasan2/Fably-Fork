@@ -298,7 +298,7 @@ class _WishlistPageState extends State<WishlistPage> {
                           icon: Icons.delete,
                           flex: 1, // Takes 1 units of space
                           //closeOnTap: false, // Prevent slider from closing immediately
-                          //label: 'Delete',
+                          label: 'Remove',
                         ),
                       ],
                     ),
