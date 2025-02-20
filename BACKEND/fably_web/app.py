@@ -847,7 +847,7 @@ def password_reset():
         
         return "Password successfully reset!"
     
-    return render_template("reset_password.html.j2"), 200
+    return render_template("reset_password.html"), 200
 
 def verify_hash_value(raw_value, hashed_value):
     hashed_user_token = hashlib.sha256(raw_value.encode()).hexdigest()
