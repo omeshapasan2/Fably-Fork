@@ -39,7 +39,7 @@ class ScannerScreen extends StatelessWidget {
   }
 
     return Scaffold(
-      appBar: AppBar(
+      /*appBar: AppBar(
         title: const Text('Scan Your Body'),
         centerTitle: true,
         backgroundColor: Colors.black,
@@ -68,28 +68,19 @@ class ScannerScreen extends StatelessWidget {
           ),
         ],
       ),
-      drawer: CommonDrawer(),
-      /*appBar: AppBar(
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            backButton,
-            const SizedBox(height: 12),
-            const Text(
-              'Scan your body',
-              style: TextStyle(
-                fontSize: 35,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+      drawer: CommonDrawer(),*/
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text("Scan Your Body", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
         ),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        automaticallyImplyLeading: false,
-        toolbarHeight: 130,
-      ),*/
+      ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -125,10 +116,10 @@ class ScannerScreen extends StatelessWidget {
           const SizedBox(height: 32),
         ],
       ),
-      bottomNavigationBar: CommonBottomNavBar(
+      /*bottomNavigationBar: CommonBottomNavBar(
         currentIndex: 2,
         //onTap: _onNavBarTap,
-      ),
+      ),*/
     );
   }
 }

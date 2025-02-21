@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../shop/wishlist.dart';
 import '../../scanner/scanner.dart';
 import '../home.dart';
+import '../../scanner/add_images.dart';
 
 class CommonBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -84,7 +85,7 @@ class CommonBottomNavBar extends StatelessWidget {
                 Navigator.push(
                   context,
                   PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) => ScannerScreen(),
+                    pageBuilder: (context, animation, secondaryAnimation) => UploadImagesPage(),//ScannerScreen(),
                     transitionsBuilder: (context, animation, secondaryAnimation, child) {
                       return child; // No animation, just return the new page
                     },

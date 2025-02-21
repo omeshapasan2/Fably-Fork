@@ -95,19 +95,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Product>> futureProducts;
 
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = [
-    HomeScreen(),
-    WishlistPage(),
-    ScannerScreen(),
-  ];
-
-  void _onNavBarTap(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
 
   // Refresh method to reload data from API
 
@@ -247,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       bottomNavigationBar: CommonBottomNavBar(
-        currentIndex: _currentIndex,
+        currentIndex: 0,
         //onTap: _onNavBarTap,
       ),
     );

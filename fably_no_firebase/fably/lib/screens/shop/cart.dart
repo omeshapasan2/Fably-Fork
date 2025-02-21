@@ -327,155 +327,157 @@ class _CartPageState extends State<CartPage> {
       ),*/
 
       
-      body: isLoading ? Center(child: CircularProgressIndicator()) : cartItems.isEmpty ? Center(child: Text('No Items in Cart')) : Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: cartItems.length,// number of items in the cart
-                itemBuilder: (context, index) {
-                  final item = cartItems[index];
-                  return Slidable(
-                    key: ValueKey(item['name']),
-                    endActionPane: ActionPane(
-                      extentRatio: 0.3,
-                      motion: ScrollMotion(),
-                      children: [
-                        SlidableAction(
-                          onPressed: (context) {
-                            removeItem(index);
-                          },
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.black,
-                          icon: Icons.exposure_minus_1,
-                          flex: 1, // Takes 1 units of space
-                          //label: 'Remove One',
-                        ),
-                        SlidableAction(
-                          onPressed: (context) { 
-                            removeItem(index, count: item['quantity']);
+      body: SafeArea( 
+        child: isLoading ? Center(child: CircularProgressIndicator()) : cartItems.isEmpty ? Center(child: Text('No Items in Cart')) : Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: cartItems.length,// number of items in the cart
+                  itemBuilder: (context, index) {
+                    final item = cartItems[index];
+                    return Slidable(
+                      key: ValueKey(item['name']),
+                      endActionPane: ActionPane(
+                        extentRatio: 0.3,
+                        motion: ScrollMotion(),
+                        children: [
+                          SlidableAction(
+                            onPressed: (context) {
+                              removeItem(index);
                             },
-                          //label: 'Remove All',
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.black,
-                          icon: Icons.delete,
-                          flex: 1, // Takes 1 units of space
-                          //closeOnTap: false, // Prevent slider from closing immediately
-                          //label: 'Delete',
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.black,
+                            icon: Icons.exposure_minus_1,
+                            flex: 1, // Takes 1 units of space
+                            //label: 'Remove One',
+                          ),
+                          SlidableAction(
+                            onPressed: (context) { 
+                              removeItem(index, count: item['quantity']);
+                              },
+                            //label: 'Remove All',
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.black,
+                            icon: Icons.delete,
+                            flex: 1, // Takes 1 units of space
+                            //closeOnTap: false, // Prevent slider from closing immediately
+                            //label: 'Delete',
+                          ),
+                        ],
+                      ),
+                      child: Card(// cart item display card
+                        margin: EdgeInsets.symmetric(vertical: 5.0),
+                        
+                        child: ListTile(
+                          leading: Image.network( // image
+                            item['photos'][0], // Replace this with your image URL
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover, // Ensures the image fills the space
+                          ),
+                          title: Text(item['name']),
+                          onTap: () {
+                              onCardTap(index);
+                            },
+                          subtitle:
+                              Text('Price: \$${item['price']} x ${item['quantity']} = \$${(item['price'] * item['quantity']).toStringAsFixed(2)}'),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total Items (${(cartItems.length)}):',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
+                        ),
+                        Text(
+                          '\$${(totalPrice).toStringAsFixed(2)}', // Example value for total items
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
                         ),
                       ],
                     ),
-                    child: Card(// cart item display card
-                      margin: EdgeInsets.symmetric(vertical: 5.0),
-                      
-                      child: ListTile(
-                        leading: Image.network( // image
-                          item['photos'][0], // Replace this with your image URL
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover, // Ensures the image fills the space
+                    const SizedBox(height: 8), // Add spacing between rows
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Standard Delivery:',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
                         ),
-                        title: Text(item['name']),
-                        onTap: () {
-                            onCardTap(index);
-                          },
-                        subtitle:
-                            Text('Price: \$${item['price']} x ${item['quantity']} = \$${(item['price'] * item['quantity']).toStringAsFixed(2)}'),
-                      ),
+                        Text(
+                          '\$${deliveryPrice.toStringAsFixed(2)}', // Example delivery cost
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total Items (${(cartItems.length)}):',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
-                      ),
-                      Text(
-                        '\$${(totalPrice).toStringAsFixed(2)}', // Example value for total items
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8), // Add spacing between rows
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Standard Delivery:',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
-                      ),
-                      Text(
-                        '\$${deliveryPrice.toStringAsFixed(2)}', // Example delivery cost
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8), // Add spacing between rows
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total:',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      Text(
-                        '\$${(totalPrice+deliveryPrice).toStringAsFixed(2)}', // Final total cost
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  textStyle: const TextStyle(fontSize: 25),
-                  minimumSize: const Size.fromHeight(50),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CheckoutScreen()),
-                  );
-                },
-                child: const Text('Checkout'),
-              ),
-              /*child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black, // Background color
-                  backgroundColor: Colors.white, // Text and icon color
-                ),
-                onPressed: () {
-                  // Handle checkout logic here
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Proceeding to Checkout...')),
-                  );
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CheckoutScreen(),
+                    const SizedBox(height: 8), // Add spacing between rows
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total:',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        Text(
+                          '\$${(totalPrice+deliveryPrice).toStringAsFixed(2)}', // Final total cost
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ],
                     ),
-                  );
-                  //Navigator.pushNamed(context, '/checkout');
-                },
-                child: Text('Checkout'),
-              ),*/
-            ),
-          ],
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                /*child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    textStyle: const TextStyle(fontSize: 25),
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+                    );
+                  },
+                  child: const Text('Checkout'),
+                ),*/
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.black, // Background color
+                    backgroundColor: Colors.white, // Text and icon color
+                  ),
+                  onPressed: () {
+                    // Handle checkout logic here
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Proceeding to Checkout...')),
+                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CheckoutScreen(),
+                      ),
+                    );
+                    //Navigator.pushNamed(context, '/checkout');
+                  },
+                  child: Text('Checkout'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

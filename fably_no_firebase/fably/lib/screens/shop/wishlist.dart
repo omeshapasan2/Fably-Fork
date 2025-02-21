@@ -332,7 +332,7 @@ class _WishlistPageState extends State<WishlistPage> {
             
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              /*child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
@@ -346,8 +346,8 @@ class _WishlistPageState extends State<WishlistPage> {
                   );
                 },
                 child: const Text('Add all to cart'),
-              ),
-              /*child: ElevatedButton(
+              ),*/
+              child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.black, // Background color
                   backgroundColor: Colors.white, // Text and icon color
@@ -355,7 +355,7 @@ class _WishlistPageState extends State<WishlistPage> {
                 onPressed: () {
                 },
                 child: Text('Add all to cart'),
-              ),*/
+              ),
             ),
           ],
         ),
