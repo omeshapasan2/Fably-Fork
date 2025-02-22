@@ -82,6 +82,9 @@ class _LoginScreenState extends State<LoginScreen> {
       prefs.setPrefs('userInfo', jsonEncode(userInfo));
 
       print("Login successful. User info and cookies saved.");
+      setState(() {
+        _isLoading = true;
+      });
       return true;
     } else {
       if(loginResponse.statusCode==401){
@@ -89,12 +92,21 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       print("Login failed with status code: ${loginResponse.statusCode}");
       print("Response: ${loginResponse.body}");
+      setState(() {
+        _isLoading = true;
+      });
     }
     } catch(e){
         _message = '$e';
         print(e);
+        setState(() {
+          _isLoading = true;
+        });
       return false;
     }
+    setState(() {
+      _isLoading = true;
+    });
     return false;
   }
 

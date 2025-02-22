@@ -248,7 +248,7 @@ def login():
 @app.route('/login_customer', methods=['GET', 'POST'])
 def login_customer():
     if request.method == 'POST':
-        customer = customers_collection.find_one({'email': request.get_json()['email']})
+        customer = customers_collection.find_one({'email': request.get_json()['email'].strip()})
         
         if customer and check_password_hash(customer['password'], request.get_json()['password']):
             session["type"] = "Customer"
@@ -272,13 +272,15 @@ def login_customer():
 @app.route('/register_customer', methods=['GET', 'POST'])
 def register_customer():
     if request.method == 'POST':
-        existing_user = customers_collection.find_one({'email': request.get_json()['email']})
+        existing_user = customers_collection.find_one({'email': request.get_json()['email'].strip()})
         
         if existing_user is None:
             hashed_password = generate_password_hash(request.get_json()['password'])
             customers_collection.insert_one({
                 #'name': request.get_json()['name'],
-                'email': request.get_json()['email'],
+                'fname': request.get_json()['first_name'].strip(),
+                'lname': request.get_json()['last_name'].strip(),
+                'email': request.get_json()['email'].strip(),
                 'password': hashed_password,
                 'created_date': datetime.now(),
                 'cart':[],
@@ -289,7 +291,7 @@ def register_customer():
 Thank you for Signing Up to Fably!
 """
             body = render_template('email_templates/register_customer.html')
-            mail.send_email(request.get_json()["email"], "Registration to Fably", body)
+            mail.send_email(request.get_json()["email"].strip(), "Registration to Fably", body)
             
             return "Success!", 200
     return "Already Exists", 400
@@ -540,8 +542,8 @@ TODO: add crsf token to the input
             
             cart = user["cart"]
 
-            item_id = request.get_json()["item_id"]
-            quantity = request.get_json()["quantity"]
+            item_id = request.get_json()["item_id"].strip()
+            quantity = request.get_json()["quantity"].strip()
 
             print("Item Id:",item_id)
             item_found = False
@@ -775,7 +777,7 @@ accepts input: {'item_id':'1234', 'quantity':1}
 def forgot_password():
     if request.method == 'POST':
         try:
-            email = request.get_json()['email']
+            email = request.get_json()['email'].strip()
 
             # Fetch the user
             try:
