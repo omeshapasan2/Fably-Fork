@@ -307,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 40),
                       AuthTextField(
-                          controller: _emailController, labelText: 'Email'),
+                          controller: _emailController, labelText: 'Email',),
                       AuthTextField(
                         controller: _passwordController,
                         labelText: 'Password',
@@ -321,7 +321,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextButton(
                         onPressed: _isLoading ? null : _handleForgotPassword,
                         child: const Text('Forgot Password?',
-                            style: TextStyle(color: Colors.white)),
+                            style: TextStyle(color: Colors.white, fontSize: 18,height: 10)),
                       ),
                       TextButton(
                         onPressed: () {
