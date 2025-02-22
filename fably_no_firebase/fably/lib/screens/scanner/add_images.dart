@@ -7,10 +7,16 @@ import '../home/widgets/common_drawer.dart';
 import '../shop/cart.dart';
 import '../auth/login.dart';
 import '../../utils/requests.dart';
+import 'select_product.dart';
 
 class UploadImagesPage extends StatefulWidget {
   @override
   _UploadImagesPageState createState() => _UploadImagesPageState();
+
+  final String? productId; // Optional input string
+
+  UploadImagesPage({this.productId});
+
 }
 
 class _UploadImagesPageState extends State<UploadImagesPage> {
@@ -81,6 +87,10 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                       onPressed: () {
                         overlayEntry.remove(); // Remove the popup safely
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
                       child: Text("Got it!"),
                     ),
                   ],
@@ -95,11 +105,11 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
     overlay.insert(overlayEntry);
 
     // Automatically remove the popup after 10 seconds if not manually dismissed
-    Future.delayed(Duration(seconds: 10), () {
+    /*Future.delayed(Duration(seconds: 10), () {
       if (overlayEntry.mounted) {
         overlayEntry.remove();
       }
-    });
+    });*/
   }
  
 
@@ -119,14 +129,26 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
   // Function to upload the images
   Future<void> _uploadImages() async {
-    if (_userImage == null || _clothingImage == null) {
+    if (_userImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select or capture both images')),
+        SnackBar(content: Text('Please select or capture your image')),
       );
       return;
     }
+    if (widget.productId == "") {
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => SelectProductPage(userImage:_userImage),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return child; // No animation, just return the new page
+          },
+        ),
+      );
+    } else{
+      _showMessage("Virtual Try-On function...");
+    }
 
-    _showMessage("Upload Images function...");
     return;
 
     final requests = BackendRequests();
@@ -176,16 +198,16 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showCustomPopup(context);
+      //_showMessage(widget.productId ?? 'No product ID');
     });
     
-
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Upload Images'),
+        title: const Text('Upload Image'),
         centerTitle: true,
         backgroundColor: Colors.black,
         actions: [
@@ -225,10 +247,10 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
               children: [
                 // Display user image
                 _userImage != null
-                    ? Image.file(_userImage!, height: 200)
+                    ? Image.file(_userImage!, height: 450)
                     : Container(
-                        height: 200,
-                        width: 200,//double.infinity,
+                        height: 450,
+                        width: 300,//double.infinity,
                         decoration: BoxDecoration(
                           color: const Color.fromARGB(255, 0, 0, 0),
                           borderRadius: BorderRadius.circular(8),
@@ -248,19 +270,31 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                   children: [
                     ElevatedButton(
                       onPressed: () => _pickImage(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                      ),
                       child: Text('Select Your Image'),
+                      
                     ),
                     SizedBox(width: 10),
                     ElevatedButton.icon(
                       onPressed: () => _takePicture(true),
-                      icon: Icon(Icons.camera_alt),
+                      icon: Icon(
+                        Icons.camera_alt,
+                        color: Colors.black,
+                        ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                      ),
                       label: Text('Capture'),
                     ),
                   ],
                 ),
                 SizedBox(height: 20),
                 // Display clothing image
-                _clothingImage != null
+                /*_clothingImage != null
                     ? Image.file(_clothingImage!, height: 200)
                     : Container(
                         height: 200,
@@ -294,11 +328,18 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 30),
+                SizedBox(height: 30),*/
                 ElevatedButton.icon(
                   onPressed: _uploadImages,
-                  icon: Icon(Icons.upload),
-                  label: Text('Upload Images'),
+                  icon: Icon(
+                    Icons.upload,
+                    color: Colors.black,
+                    ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                  ),
+                  label: Text('Upload Image'),
                 ),
               ],
             ),

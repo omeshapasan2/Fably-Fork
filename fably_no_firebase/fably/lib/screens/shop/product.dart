@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../../screens/gender/gender_selection.dart'; // Import for AreYouScreen
 import '../../utils/user_preferences.dart';
+import '../scanner/add_images.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 
@@ -519,7 +520,15 @@ class _ProductPageState extends State<ProductPage> {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              // Implement virtual try-on
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation, secondaryAnimation) => UploadImagesPage(productId: widget.product.id),
+                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                    return child; // No animation, just return the new page
+                                  },
+                                ),
+                              );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,

@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {9
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Firebase Auth',
+      title: 'Fably',
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,
