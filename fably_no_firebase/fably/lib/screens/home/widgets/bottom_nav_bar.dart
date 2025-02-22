@@ -4,6 +4,7 @@ import '../../shop/wishlist.dart';
 import '../../scanner/scanner.dart';
 import '../home.dart';
 import '../../scanner/add_images.dart';
+import '../../profile/pofile_page.dart';
 
 class CommonBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -94,7 +95,15 @@ class CommonBottomNavBar extends StatelessWidget {
                 );
                 break;
               case 3:
-                _showMessage('Profile tapped');
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => ProfilePage(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      return child; // No animation, just return the new page
+                    },
+                  ),
+                );
                 break;
             };
       }

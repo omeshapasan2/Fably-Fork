@@ -543,7 +543,7 @@ TODO: add crsf token to the input
             cart = user["cart"]
 
             item_id = request.get_json()["item_id"].strip()
-            quantity = request.get_json()["quantity"].strip()
+            quantity = request.get_json()["quantity"]
 
             print("Item Id:",item_id)
             item_found = False
