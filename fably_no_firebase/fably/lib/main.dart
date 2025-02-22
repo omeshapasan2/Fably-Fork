@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/register.dart';
 import 'screens/home/home.dart';
-import 'screens/shop/product.dart';
 
 void main() async {
   //WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +27,7 @@ class MyApp extends StatelessWidget {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.tealAccent,
+            backgroundColor:Colors.white,
             foregroundColor: Colors.black,
           ),
         ),
