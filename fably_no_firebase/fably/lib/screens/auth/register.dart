@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-//import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert'; // For JSON decoding, if needed
+import 'dart:convert';
 import 'dart:async';
 import '../home/home.dart';
 import 'login.dart';
-import 'auth_widget.dart';// Import for AreYouScreen
+import 'auth_widget.dart'; // Import for AreYouScreen
 import '../../utils/user_preferences.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
@@ -19,52 +18,40 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  //final FirebaseAuth _auth = FirebaseAuth.instance;
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   String _message = '';
   bool _isLoading = false;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  Future<bool> registerCustomer(String email, String password) async {
+  // Register method
+  Future<bool> registerCustomer(String firstName, String lastName, String email, String password) async {
     final requests = BackendRequests();
-    final prefs = Prefs();
-  // Step 1: Retrieve the CSRF token
-  
-  final registerResponse = await requests.postRequest(
-    'register_customer', 
-    body:
-      {
+
+    final registerResponse = await requests.postRequest(
+      'register_customer', 
+      body: {
+        'first_name': firstName,
+        'last_name': lastName,
         'email': email,
         'password': password,
       }
     );
-  // Step 4: Handle the login response
-  if (registerResponse.statusCode == 200) {
-    // Parse the returned user info
 
-    // Extract cookies from the response headers
-    // Note: The cookie string might include additional attributes
-    final String? cookies = registerResponse.headers['set-cookie'];
-    
-    print("Cookies: $cookies");
-    /*if (cookies!=null){
-      prefs.setPrefs('cookies', cookies);
-    }*/
-
-    print("Register successful.");
-    return true;
-  } else {
-    print("Register failed with status code: ${registerResponse.statusCode}");
-    print("Response: ${registerResponse.body}");
+    if (registerResponse.statusCode == 200) {
+      print("Register successful.");
+      return true;
+    } else {
+      print("Register failed with status code: ${registerResponse.statusCode}");
+      print("Response: ${registerResponse.body}");
+    }
+    return false;
   }
-  return false;
-}
 
-  // Register method
   Future<void> _register() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
@@ -78,32 +65,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      /*UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );*/
-
-      bool registerSuccess = await registerCustomer(_emailController.text, _passwordController.text);
-      
-
-      // Send verification email
-      //await userCredential.user?.sendEmailVerification();
+      bool registerSuccess = await registerCustomer(
+        _firstNameController.text,
+        _lastNameController.text,
+        _emailController.text,
+        _passwordController.text,
+      );
 
       setState(() {
-        _message = 'Account created! Check your email for verification.';
+        _message = registerSuccess 
+          ? 'Account created! Check your email for verification.' 
+          : 'Registration failed.';
         _isLoading = false;
       });
-      if(!registerSuccess){
-        return;
-      }
 
-      // Optionally, navigate to another screen or login screen
+      if (!registerSuccess) return;
+
+      // Navigate to login screen upon successful registration
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
-    } /* on FirebaseAuthException*/ catch (e) {
+    } catch (e) {
       setState(() {
         _message = 'Registration Error: $e';
         _isLoading = false;
@@ -111,17 +94,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  // Google sign-up method
   Future<void> _googleSignUpMethod() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Sign out from any existing session
       await _googleSignIn.signOut();
-
-      // Now, trigger the Google Sign-In process
       GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
@@ -134,13 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      /*final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );*/
-
-      // Sign up to Firebase with the obtained credentials
-      /*await _auth.signInWithCredential(credential);*/
+      // TODO: Send Google sign-in token to backend for authentication.
 
       Navigator.pushReplacement(
         context,
@@ -166,10 +139,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Align(
                 alignment: Alignment.center,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 400),
+                  constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(
                     children: [
-                      Text(
+                      const Text(
                         'Register',
                         style: TextStyle(
                           fontFamily: 'Italiana',
@@ -179,51 +152,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 40),
+
+                      // First Name Field
                       AuthTextField(
-                          controller: _emailController, labelText: 'Email'),
+                        controller: _firstNameController, 
+                        labelText: 'First Name',
+                      ),
+
+                      // Last Name Field
+                      AuthTextField(
+                        controller: _lastNameController, 
+                        labelText: 'Last Name',
+                      ),
+
+                      // Email Field
+                      AuthTextField(
+                        controller: _emailController, 
+                        labelText: 'Email',
+                      ),
+
+                      // Password Field
                       AuthTextField(
                         controller: _passwordController,
                         labelText: 'Password',
                         obscureText: true,
                       ),
+
+                      // Confirm Password Field
                       AuthTextField(
                         controller: _confirmPasswordController,
                         labelText: 'Confirm Password',
                         obscureText: true,
                       ),
+
                       const SizedBox(height: 20),
+
+                      // Register Button
                       AuthButton(text: 'Register', onPressed: _register),
+
                       const SizedBox(height: 20),
+
                       TextButton(
                         onPressed: () {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const LoginScreen()),
+                              builder: (context) => const LoginScreen()
+                            ),
                           );
                         },
-                        child: const Text('Already have an account? Login',
-                            style: TextStyle(color: Colors.white)),
+                        child: const Text(
+                          'Already have an account? Login',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
+
                       const SizedBox(height: 20),
+
                       Text(
                         _message,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'Jura',
                           fontSize: 16,
                           color: Colors.white,
                         ),
                       ),
+
                       const SizedBox(height: 30),
+
+                      // Google Sign-Up
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            icon: Image.asset('assets/google_logo.png',
-                                height: 40, width: 40),
+                            icon: Image.asset(
+                              'assets/google_logo.png',
+                              height: 40, width: 40,
+                            ),
                             onPressed: _googleSignUpMethod,
                           ),
-                          Text(
+                          const Text(
                             'Sign up via Google',
                             style: TextStyle(color: Colors.white),
                           ),
