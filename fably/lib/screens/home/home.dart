@@ -1,3 +1,4 @@
+import 'package:fably/screens/shop/cart.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/login.dart';
@@ -108,7 +109,13 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_bag_outlined),
-            onPressed: () {},
+            onPressed: () {
+              // Navigate to the CartPage
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => CartPage()),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout),

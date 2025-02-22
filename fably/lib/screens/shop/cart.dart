@@ -86,8 +86,8 @@ class _CartPageState extends State<CartPage> {
       userInfo = jsonDecode(userInfoStr);
       
     });
-    //final url = Uri.parse('http://152.53.119.239:5000/products');
-    final url = Uri.parse('127.0.0.1:5000/get_cart/${userInfo['_id']}');
+    final url = Uri.parse('http://152.53.119.239:5000/products');
+    // final url = Uri.parse('127.0.0.1:5000/get_cart/${userInfo['_id']}');
 
     try {
       final response = await http.get(
