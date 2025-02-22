@@ -784,6 +784,11 @@ def forgot_password():
             except Exception as e:
                 print(e)
                 return "No such customer", 404
+
+            if (str(customer['_id']) in reset_tokens.keys()):
+                if (reset_tokens[str(customer['_id'])]['expires']>datetime.now()):
+                    print("token already sent")
+                    return "Email already sent", 200
             
             # code to generate a token and email the url belongin to that token to the customer
             raw_token = secrets.token_urlsafe(32)

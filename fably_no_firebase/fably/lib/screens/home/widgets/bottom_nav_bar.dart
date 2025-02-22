@@ -7,6 +7,7 @@ import '../../scanner/add_images.dart';
 
 class CommonBottomNavBar extends StatelessWidget {
   final int currentIndex;
+  
   //final ValueChanged<int> onTap;
 
   
@@ -85,7 +86,7 @@ class CommonBottomNavBar extends StatelessWidget {
                 Navigator.push(
                   context,
                   PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) => UploadImagesPage(),//ScannerScreen(),
+                    pageBuilder: (context, animation, secondaryAnimation) => UploadImagesPage(productId: ""),
                     transitionsBuilder: (context, animation, secondaryAnimation, child) {
                       return child; // No animation, just return the new page
                     },
