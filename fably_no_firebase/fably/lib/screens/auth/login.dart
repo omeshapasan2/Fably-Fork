@@ -9,7 +9,6 @@ import '../../utils/user_preferences.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert'; // For JSON decoding, if needed
 import 'dart:async';
 
@@ -285,10 +284,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     children: [
                       const Text(
-                        'Login',
+                        'LOGIN',
                         style: TextStyle(
-                          fontFamily: 'Italiana',
-                          fontSize: 40,
+                          letterSpacing: 8,
+                          fontFamily: 'jura',
+                          fontSize: 53,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -303,7 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
                       AuthButton(
-                        text: 'Login',
+                        text: 'LOGIN',
                         onPressed: _isLoading ? () {} : _handleLogin,
                       ),
                       TextButton(
