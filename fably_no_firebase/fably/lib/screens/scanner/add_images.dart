@@ -2,12 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import '../../utils/prefs.dart';
 import '../home/widgets/bottom_nav_bar.dart';
 import '../home/widgets/common_drawer.dart';
 import '../shop/cart.dart';
 import '../auth/login.dart';
 import '../../utils/requests.dart';
 import 'select_product.dart';
+import 'tryon_result.dart';
 
 class UploadImagesPage extends StatefulWidget {
   @override
@@ -147,6 +149,17 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       );
     } else{
       _showMessage("Virtual Try-On function...");
+
+      Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => VirtualTryOnResultPage(inputImage:_userImage, id: widget.productId ?? ""),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return child; // No animation, just return the new page
+        },
+      ),
+    );
+
     }
 
     return;
@@ -181,10 +194,12 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
   Future<void> signOut() async {
     final requests = BackendRequests();
+    final prefs = Prefs();
 
     try{
       final response = await requests.getRequest('logout');
       if (response.statusCode==200){
+        await prefs.clearPrefs();
         _showMessage('Logged out successfully');
       }
     }catch (e) {
@@ -196,9 +211,16 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    final requests = BackendRequests();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if(!await requests.isLoggedIn()){
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
       showCustomPopup(context);
-      //_showMessage(widget.productId ?? 'No product ID');
     });
     
   }
@@ -226,11 +248,12 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              signOut();
-              Navigator.pushReplacement(
+              signOut().then((o){
+                Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+                );
+              });
             },
           ),
         ],

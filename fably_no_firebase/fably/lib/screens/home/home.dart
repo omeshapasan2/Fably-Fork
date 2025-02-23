@@ -112,10 +112,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> signOut() async {
     final requests = BackendRequests();
+    final prefs = Prefs();
 
     try{
       final response = await requests.getRequest('logout');
       if (response.statusCode==200){
+          await prefs.clearPrefs();
         _showMessage('Logged out successfully');
       }
     }catch (e) {
@@ -127,6 +129,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    final requests = BackendRequests();
+    final prefs = Prefs();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if(!await requests.isLoggedIn()){
+          print('User not logged in');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        }
+      });
     futureProducts = ProductService().fetchProducts();
   }
 
@@ -153,11 +166,12 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              signOut();
-              Navigator.pushReplacement(
+              signOut().then((o){
+                Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+                );
+              });
             },
           ),
         ],

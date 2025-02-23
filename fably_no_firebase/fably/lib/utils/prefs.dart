@@ -14,4 +14,11 @@ class Prefs{
     final String? userInfoString = prefs.getString(name);
     return userInfoString;
   }
+
+  Future<void> clearPrefs() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.clear();
+
+    print(prefs.getKeys());
+  }
 }

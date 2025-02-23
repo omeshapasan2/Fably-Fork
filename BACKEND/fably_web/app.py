@@ -269,6 +269,18 @@ def login_customer():
             
     return "Invalid email or password!", 401
 
+@app.route('/check_logged_in')
+def checkLoggedIn():
+    if "type" in session:
+        if session["type"] == "Customer":
+            return "LoggedIn", 200
+
+    if "user_id" in session:
+        if session["user_id"] != '':
+            return "LoggedIn", 200
+
+    return "LoggedOut", 401
+
 @app.route('/register_customer', methods=['GET', 'POST'])
 def register_customer():
     if request.method == 'POST':

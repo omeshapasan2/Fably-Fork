@@ -4,6 +4,7 @@ import 'package:fably/screens/scanner/add_images.dart';
 import 'package:fably/screens/shop/cart.dart';
 import 'package:fably/screens/shop/wishlist.dart';
 import 'package:flutter/material.dart';
+import '../../../utils/prefs.dart';
 import '../../gender/gender_selection.dart';
 import '../../../utils/requests.dart';
 import '../../profile/pofile_page.dart';
@@ -12,10 +13,12 @@ class CommonDrawer extends StatelessWidget {
 
   Future<void> signOut(BuildContext context) async {
     final requests = BackendRequests();
+    final prefs = Prefs();
 
     try{
       final response = await requests.getRequest('logout');
       if (response.statusCode==200){
+          await prefs.clearPrefs();
         _showMessage(context, 'Logged out successfully');
       }
     }catch (e) {
@@ -37,11 +40,11 @@ class CommonDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.tealAccent),
+              decoration: BoxDecoration(color: Color.fromARGB(255, 255, 255, 255)),
               child: Text('Menu',
                   style: TextStyle(color: Colors.black, fontSize: 24)),
             ),
-            ListTile(
+            /*ListTile(
               leading: const Icon(Icons.settings_backup_restore),
               title: const Text('Back to Selection Screen'),
               onTap: () {
@@ -50,7 +53,7 @@ class CommonDrawer extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const AreYouScreen()),
                 );
               },
-            ),
+            ),*/
             Padding(
                 padding: const EdgeInsets.only(left: 12.0),
                 child: ListTile(
@@ -150,11 +153,12 @@ class CommonDrawer extends StatelessWidget {
                   style: TextStyle(color: Colors.white),
                 ),
                 onTap: () async {
-                    await signOut(context);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    );
+                    await signOut(context).then((value) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      );
+                    });
                   },
                 //onTap: () => _logout(context),
               ),

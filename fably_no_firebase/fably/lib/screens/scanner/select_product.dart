@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:fably/screens/auth/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:http/http.dart' as http;
 import 'add_images.dart';
 import '../../utils/requests.dart';
+import 'tryon_result.dart';
 
 class SelectProductPage extends StatefulWidget {
   @override
@@ -15,8 +17,6 @@ class SelectProductPage extends StatefulWidget {
   SelectProductPage({this.userImage});
 
 }
-
-
 
 class _SelectProductPageState extends State<SelectProductPage> {
   List<dynamic> products = [];
@@ -30,7 +30,15 @@ class _SelectProductPageState extends State<SelectProductPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    final requests = BackendRequests();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if(!await requests.isLoggedIn()){
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
       fetchProducts();
     });
   }
@@ -81,7 +89,6 @@ class _SelectProductPageState extends State<SelectProductPage> {
                             final item = products[index];
                             return Card(// cart item display card
                               margin: EdgeInsets.symmetric(vertical: 5.0),
-                              
                               child: ListTile(
                                 leading: Image.network( // image
                                   item['photos'][0], // Replace this with your image URL
@@ -92,6 +99,17 @@ class _SelectProductPageState extends State<SelectProductPage> {
                                 title: Text(item['name']),
                                 onTap: () {
                                     _showMessage("Virtual Try-On function...");
+                                    
+
+                                    Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) => VirtualTryOnResultPage(inputImage:widget.userImage, id: item['_id']),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          return child; // No animation, just return the new page
+                                        },
+                                      ),
+                                    );
                                   },
                                 /*subtitle:
                                     Text('Price: \$${item['price']} x ${item['quantity']} = \$${(item['price'] * item['quantity']).toStringAsFixed(2)}'),*/
@@ -103,65 +121,6 @@ class _SelectProductPageState extends State<SelectProductPage> {
                     ],
                   ),
                 ),
-    );
-  }
-}
-
-class ProductCard extends StatelessWidget {
-  final dynamic product;
-  final VoidCallback onSelect;
-
-  const ProductCard({Key? key, required this.product, required this.onSelect}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      elevation: 5,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-            child: Image.network(
-              product['image'],
-              height: 100,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Icon(Icons.image_not_supported, size: 100),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product['name'],
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4),
-                Text(
-                  product['description'] ?? '',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: onSelect,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Select'),
-          ),
-        ],
-      ),
     );
   }
 }

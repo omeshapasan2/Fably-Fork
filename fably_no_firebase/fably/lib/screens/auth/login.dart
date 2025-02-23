@@ -79,9 +79,9 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setPrefs('cookies', cookies);
       }
 
-      prefs.setPrefs('userInfo', jsonEncode(userInfo));
+      await prefs.setPrefs('userInfo', jsonEncode(userInfo));
 
-      print("Login successful. User info and cookies saved.");
+      _showMessage("Login successful. User info and cookies saved.");
       setState(() {
         _isLoading = true;
       });
@@ -140,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // Login method wrapper to handle void callback
   void _handleLogin() {
     if (!_isLoading) {
-      _login();
+      _login().then((value) => null);
     }
   }
 
@@ -149,19 +149,6 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
     });
-    //try {
-      /*UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-
-      if (userCredential.user?.emailVerified == false) {
-        setState(() {
-          _message = 'Email not verified. Check your inbox.';
-          _isLoading = false;
-        });
-        return;
-      }*/
 
       bool loginSuccess = await loginCustomer(_emailController.text, _passwordController.text);
       setState(() {
@@ -171,25 +158,11 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // Check if gender is selected
-      bool hasGender = await UserPreferences.hasSelectedGender();
-      if (!hasGender) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AreYouScreen()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      }
-    //} /*on FirebaseAuthException*/ catch (e) {
-    /*  setState(() {
-        _message = 'Login Error: $e';
-        _isLoading = false;
-      });
-    }*/
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+
   }
 
   // Google sign-in method wrapper
@@ -279,6 +252,25 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }*/
+
+  
+
+  @override
+  void initState() {
+    super.initState();
+    final request = BackendRequests();
+    final prefs = Prefs();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if(await request.isLoggedIn()){
+        print('User is already logged in');
+        print(prefs.getPrefs('userInfo'));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
