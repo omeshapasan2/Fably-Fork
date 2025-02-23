@@ -221,7 +221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 30),
 
                       // Google Sign-Up
-                      Row(
+                      /*Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
@@ -236,7 +236,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             style: TextStyle(color: Colors.white),
                           ),
                         ],
-                      ),
+                      ),*/
                     ],
                   ),
                 ),

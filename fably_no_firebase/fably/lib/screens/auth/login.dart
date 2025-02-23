@@ -346,7 +346,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 30),
-                        Row(
+                        /*Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             IconButton(
@@ -359,7 +359,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: TextStyle(color: Colors.white),
                             ),
                           ],
-                        ),
+                        ),*/
                       ],
                     ),
                   ),
