@@ -4,8 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../home/home.dart';
 import 'register.dart';
 import 'auth_widget.dart';
-import '../../screens/gender/gender_selection.dart'; // Import for AreYouScreen
-import '../../utils/user_preferences.dart';
+// Import for AreYouScreen
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -302,15 +301,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 60),
                         AuthTextField(
-                            controller: _emailController, labelText: 'Email',),
+                            controller: _emailController, 
+                            labelText: 'Email',),
+                        const SizedBox(height: 40),
                         AuthTextField(
                           controller: _passwordController,
                           labelText: 'Password',
                           obscureText: true,
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 50),
                         AuthButton(
                           text: 'LOGIN',
                           onPressed: _isLoading ? () {} : _handleLogin,
@@ -318,7 +319,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextButton(
                           onPressed: _isLoading ? null : _handleForgotPassword,
                           child: const Text('Forgot Password?',
-                              style: TextStyle(color: Colors.white, fontSize: 18,height: 10)),
+                              style: TextStyle(color: Colors.white, fontSize: 13,height: 10)),
                         ),
                         TextButton(
                           onPressed: () {

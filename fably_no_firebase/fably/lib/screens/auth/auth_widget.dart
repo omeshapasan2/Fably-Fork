@@ -32,13 +32,35 @@ class AuthButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
 
-  const AuthButton({super.key, required this.text, required this.onPressed});
+  AuthButton({
+    required this.text,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: onPressed,
-      child: Text(text),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: "jura",
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          letterSpacing: 4,
+        ),
+        
+        
+        
+        ),
+      
+      style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 34), // Set padding
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(34), // Set border radius
+        ),
+        elevation: 5, // Set shadow
+      ),
     );
   }
 }
