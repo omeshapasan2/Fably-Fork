@@ -288,7 +288,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.center,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 400),
+                    constraints: const BoxConstraints(maxWidth: 300),
                     child: Column(
                       children: [
                         const Text(
@@ -305,7 +305,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         AuthTextField(
                             controller: _emailController, 
                             labelText: 'Email',),
-                        const SizedBox(height: 40),
                         AuthTextField(
                           controller: _passwordController,
                           labelText: 'Password',

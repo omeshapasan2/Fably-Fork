@@ -4,29 +4,40 @@ class AuthTextField extends StatelessWidget {
   final TextEditingController controller;
   final String labelText;
   final bool obscureText;
+  final EdgeInsets? margin; // Add margin parameter
 
   AuthTextField({
     required this.controller,
     required this.labelText,
     this.obscureText = false,
+    this.margin = const EdgeInsets.only(bottom: 23), // Default bottom margin
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        labelText: labelText,
-        contentPadding: EdgeInsets.only(left: 26), // Add left padding here
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(23), // Set the border radius to 34px
-          borderSide: BorderSide(width: 1), // Set the border thickness (thin)
+    return Padding(
+      padding: margin ?? EdgeInsets.zero, // Apply margin if provided
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 300,
+        ),
+        child: TextField(
+          controller: controller,
+          obscureText: obscureText,
+          decoration: InputDecoration(
+            labelText: labelText,
+            contentPadding: EdgeInsets.only(left: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(34),
+              borderSide: BorderSide(width: 1),
+            ),
+          ),
         ),
       ),
     );
   }
 }
+
 
 class AuthButton extends StatelessWidget {
   final String text;
