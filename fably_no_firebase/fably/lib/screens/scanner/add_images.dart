@@ -281,8 +281,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                         ),
                         child: Center(
                           child: Icon(
-                            Icons.person,
-                            size: 200,
+                            Icons.man,
+                            size: 300,
                             color: const Color.fromARGB(255, 255, 255, 255),
                           ),
                         ),

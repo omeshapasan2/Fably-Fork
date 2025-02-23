@@ -1,11 +1,69 @@
+import 'package:fably/screens/auth/login.dart';
+import 'package:fably/screens/home/widgets/bottom_nav_bar.dart';
+import 'package:fably/screens/home/widgets/common_drawer.dart';
+import 'package:fably/screens/shop/cart.dart';
+import 'package:fably/utils/prefs.dart';
+import 'package:fably/utils/requests.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({Key? key}) : super(key: key);
 
+  void _showMessage(String message, BuildContext context) {
+    print(message);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> signOut(context) async {
+    final requests = BackendRequests();
+    final prefs = Prefs();
+
+    try{
+      final response = await requests.getRequest('logout');
+      if (response.statusCode==200){
+          await prefs.clearPrefs();
+        _showMessage('Logged out successfully', context);
+      }
+    }catch (e) {
+      _showMessage('Error Loging out: $e', context);
+    }
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profile'),
+        centerTitle: true,
+        backgroundColor: Colors.black,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_bag_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartPage(),
+                  //builder: (context) => ProductPage(product: myProduct),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              signOut(context).then((o){
+                Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              });
+            },
+          ),
+        ],
+      ),
+      drawer: CommonDrawer(),
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Column(
@@ -150,6 +208,10 @@ class ProfilePage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: CommonBottomNavBar(
+        currentIndex: 3,
+        //onTap: _onNavBarTap,
       ),
     );
   }
