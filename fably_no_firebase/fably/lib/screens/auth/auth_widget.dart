@@ -5,8 +5,7 @@ class AuthTextField extends StatelessWidget {
   final String labelText;
   final bool obscureText;
 
-  const AuthTextField({
-    super.key,
+  AuthTextField({
     required this.controller,
     required this.labelText,
     this.obscureText = false,
@@ -16,8 +15,15 @@ class AuthTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      decoration: InputDecoration(labelText: labelText),
       obscureText: obscureText,
+      decoration: InputDecoration(
+        labelText: labelText,
+        contentPadding: EdgeInsets.only(left: 26), // Add left padding here
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(23), // Set the border radius to 34px
+          borderSide: BorderSide(width: 1), // Set the border thickness (thin)
+        ),
+      ),
     );
   }
 }
