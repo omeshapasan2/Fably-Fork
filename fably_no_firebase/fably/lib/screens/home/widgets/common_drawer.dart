@@ -1,4 +1,3 @@
-import 'package:fably/screens/auth/login.dart';
 import 'package:fably/screens/home/home.dart';
 import 'package:fably/screens/scanner/add_images.dart';
 import 'package:fably/screens/shop/cart.dart';
