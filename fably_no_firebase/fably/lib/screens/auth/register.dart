@@ -136,7 +136,7 @@ Widget build(BuildContext context) {
               'Fably',
               style: TextStyle(
                 fontFamily: 'Italiana',
-                fontSize: 70,
+                fontSize: 50,
                 fontStyle: FontStyle.italic,
                 color: Colors.white,
               ),
