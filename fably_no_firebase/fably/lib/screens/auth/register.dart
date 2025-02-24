@@ -133,7 +133,7 @@ Widget build(BuildContext context) {
           children: [
             const SizedBox(height: 50), // Reduced to make room for new title
             const Text(
-              'FABLY',
+              'Fably',
               style: TextStyle(
                 fontFamily: 'Italiana',
                 fontSize: 70,
