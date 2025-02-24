@@ -149,6 +149,7 @@ Widget build(BuildContext context) {
         style: TextStyle(
           letterSpacing: 3,
           fontFamily: 'Italiana',
+          fontWeight: FontWeight.bold,
           fontSize: 32,
           fontStyle: FontStyle.italic,
           color: Colors.white,
