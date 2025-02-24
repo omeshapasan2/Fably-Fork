@@ -61,7 +61,7 @@ Widget build(BuildContext context) {
                         fontFamily: "jura",
                         fontWeight: FontWeight.bold,
                         color: Colors.black, 
-                        fontSize: 24),
+                        fontSize: 30),
                     ),
                   ),
                 ),
