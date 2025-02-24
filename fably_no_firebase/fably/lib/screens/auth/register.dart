@@ -124,125 +124,116 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 100),
-              Align(
-                alignment: Alignment.center,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'REGISTER',
-                        style: TextStyle(
-                          letterSpacing: 8,
-                          fontFamily: 'Jura',
-                          fontSize: 53,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const SizedBox(height: 50), // Reduced to make room for new title
+            const Text(
+              'FABLY',
+              style: TextStyle(
+                fontFamily: 'Italiana',
+                fontSize: 70,
+                fontStyle: FontStyle.italic,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 30), // Added spacing between titles
+            Align(
+              alignment: Alignment.center,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  children: [
+                    const Text(
+                      'REGISTER',
+                      style: TextStyle(
+                        letterSpacing: 8,
+                        fontFamily: 'Jura',
+                        fontSize: 53,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                      const SizedBox(height: 40),
+                    ),
+                    const SizedBox(height: 40),
 
-                      // First Name Field
-                      AuthTextField(
-                        controller: _firstNameController, 
-                        labelText: 'First Name',
-                      ),
+                    // First Name Field
+                    AuthTextField(
+                      controller: _firstNameController, 
+                      labelText: 'First Name',
+                    ),
 
-                      // Last Name Field
-                      AuthTextField(
-                        controller: _lastNameController, 
-                        labelText: 'Last Name',
-                      ),
+                    // Last Name Field
+                    AuthTextField(
+                      controller: _lastNameController, 
+                      labelText: 'Last Name',
+                    ),
 
-                      // Email Field
-                      AuthTextField(
-                        controller: _emailController, 
-                        labelText: 'Email',
-                      ),
+                    // Email Field
+                    AuthTextField(
+                      controller: _emailController, 
+                      labelText: 'Email',
+                    ),
 
-                      // Password Field
-                      AuthTextField(
-                        controller: _passwordController,
-                        labelText: 'Password',
-                        obscureText: true,
-                      ),
+                    // Password Field
+                    AuthTextField(
+                      controller: _passwordController,
+                      labelText: 'Password',
+                      obscureText: true,
+                    ),
 
-                      // Confirm Password Field
-                      AuthTextField(
-                        controller: _confirmPasswordController,
-                        labelText: 'Confirm Password',
-                        obscureText: true,
-                      ),
+                    // Confirm Password Field
+                    AuthTextField(
+                      controller: _confirmPasswordController,
+                      labelText: 'Confirm Password',
+                      obscureText: true,
+                    ),
 
-                      const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                      // Register Button
-                      AuthButton(text: 'Register', onPressed: _register),
+                    // Register Button
+                    AuthButton(text: 'Register', onPressed: _register),
 
-                      const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen()
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Already have an account? Login',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      Text(
-                        _message,
-                        style: const TextStyle(
-                          fontFamily: 'Jura',
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // Google Sign-Up
-                      /*Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            icon: Image.asset(
-                              'assets/google_logo.png',
-                              height: 40, width: 40,
-                            ),
-                            onPressed: _googleSignUpMethod,
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen()
                           ),
-                          const Text(
-                            'Sign up via Google',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ],
-                      ),*/
-                    ],
-                  ),
+                        );
+                      },
+                      child: const Text(
+                        'Already have an account? Login',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Text(
+                      _message,
+                      style: const TextStyle(
+                        fontFamily: 'Jura',
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+                  ],
                 ),
               ),
-              const SizedBox(height: 50),
-            ],
-          ),
+            ),
+            const SizedBox(height: 50),
+          ],
         ),
       ),
-    );
-  }
-}
+    ),
+  );
+}}
