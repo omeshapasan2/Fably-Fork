@@ -139,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     children: [
                       const Text(
-                        'Register',
+                        'REGISTER',
                         style: TextStyle(
                           letterSpacing: 8,
                           fontFamily: 'Jura',
