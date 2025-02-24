@@ -54,7 +54,7 @@ Widget build(BuildContext context) {
                     color: Color.fromARGB(255, 255, 255, 255),
                   ),
                   child: const Padding(
-                    padding: EdgeInsets.only(left: 16.0, top: 20.0),
+                    padding: EdgeInsets.only(left: 30.0, top: 20.0),
                     child: Text(
                       'Menu',
                       style: TextStyle(
