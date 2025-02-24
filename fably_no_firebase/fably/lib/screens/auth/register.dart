@@ -197,7 +197,7 @@ Widget build(BuildContext context) {
                     const SizedBox(height: 20),
 
                     // Register Button
-                    AuthButton(text: 'Register', onPressed: _register),
+                    AuthButton(text: 'REGISTER', onPressed: _register),
 
                     const SizedBox(height: 50),
 
