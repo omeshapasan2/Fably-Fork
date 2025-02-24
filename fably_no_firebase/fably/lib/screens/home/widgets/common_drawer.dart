@@ -56,7 +56,7 @@ Widget build(BuildContext context) {
                   child: const Padding(
                     padding: EdgeInsets.only(left: 30.0, top: 20.0),
                     child: Text(
-                      'Menu',
+                      'MENU',
                       style: TextStyle(
                         fontFamily: "jura",
                         fontWeight: FontWeight.bold,
