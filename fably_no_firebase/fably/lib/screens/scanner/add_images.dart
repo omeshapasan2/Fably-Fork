@@ -68,6 +68,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                     Text(
                       "Tips for Taking Your Personal Picture",
                       style: TextStyle(
+                        fontFamily: "Ialiana",
+                        fontStyle: FontStyle.italic,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -81,7 +83,13 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                       "3. Wear fitted clothes to ensure accurate virtual try-on.\n"
                       "4. Avoid wearing hats or large accessories.\n"
                       "5. Keep a neutral background to improve results.",
-                      style: TextStyle(fontSize: 16, color: Colors.black87),
+                      style: TextStyle(
+                        height: 2.1,
+                        fontSize: 16, 
+                        color: Colors.black87,
+                        fontFamily: "Kanit",
+                        
+                        fontStyle: FontStyle.italic),
                       textAlign: TextAlign.left,
                     ),
                     SizedBox(height: 20),
@@ -297,7 +305,10 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
                       ),
-                      child: Text('Select Your Image'),
+                      child: Text(
+                        'Select Your Image',
+                        style: TextStyle(fontFamily: "jura", 
+                        fontSize: 18),),
                       
                     ),
                     SizedBox(width: 10),
