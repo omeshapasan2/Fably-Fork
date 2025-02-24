@@ -59,6 +59,7 @@ Widget build(BuildContext context) {
                       'MENU',
                       style: TextStyle(
                         fontFamily: "jura",
+                        letterSpacing: 6,
                         fontWeight: FontWeight.bold,
                         color: Colors.black, 
                         fontSize: 30),
