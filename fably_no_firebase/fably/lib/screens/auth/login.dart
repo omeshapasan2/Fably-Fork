@@ -272,104 +272,102 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Returning `false` disables the back button
-        return false;
-      },
-      child:Scaffold(
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 100),
-                Align(
-                  alignment: Alignment.center,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 300),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'LOGIN',
-                          style: TextStyle(
-                            letterSpacing: 8,
-                            fontFamily: 'jura',
-                            fontSize: 53,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+Widget build(BuildContext context) {
+  return WillPopScope(
+    onWillPop: () async {
+      return false;
+    },
+    child: Scaffold(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 50), // Reduced from 100 to make room for new title
+              const Text(
+                'FABLY',
+                style: TextStyle(
+                  fontFamily: 'Italiana',
+                  fontSize: 70,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 30), // Added spacing between titles
+              Align(
+                alignment: Alignment.center,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 300),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'LOGIN',
+                        style: TextStyle(
+                          letterSpacing: 8,
+                          fontFamily: 'jura',
+                          fontSize: 53,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                        const SizedBox(height: 60),
-                        AuthTextField(
-                            controller: _emailController, 
-                            labelText: 'Email',),
-                        AuthTextField(
-                          controller: _passwordController,
-                          labelText: 'Password',
-                          obscureText: true,
+                      ),
+                      const SizedBox(height: 60),
+                      AuthTextField(
+                        controller: _emailController, 
+                        labelText: 'Email',
+                      ),
+                      AuthTextField(
+                        controller: _passwordController,
+                        labelText: 'Password',
+                        obscureText: true,
+                      ),
+                      const SizedBox(height: 50),
+                      AuthButton(
+                        text: 'LOGIN',
+                        onPressed: _isLoading ? () {} : _handleLogin,
+                      ),
+                      TextButton(
+                        onPressed: _isLoading ? null : _handleForgotPassword,
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: Colors.white, fontSize: 13, height: 10)
                         ),
-                        const SizedBox(height: 50),
-                        AuthButton(
-                          text: 'LOGIN',
-                          onPressed: _isLoading ? () {} : _handleLogin,
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                          );
+                        },
+                        child: const Text(
+                          "Don't have an account? Register",
+                          style: TextStyle(color: Colors.white)
                         ),
-                        TextButton(
-                          onPressed: _isLoading ? null : _handleForgotPassword,
-                          child: const Text('Forgot Password?',
-                              style: TextStyle(color: Colors.white, fontSize: 13,height: 10)),
+                      ),
+                      if (_message == 'Email not verified. Check your inbox.')
+                        ElevatedButton(
+                          onPressed: _handleResendVerification,
+                          child: const Text('Resend Verification Email'),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const RegisterScreen()),
-                            );
-                          },
-                          child: const Text("Don't have an account? Register",
-                              style: TextStyle(color: Colors.white)),
+                      const SizedBox(height: 20),
+                      Text(
+                        _message,
+                        style: const TextStyle(
+                          fontFamily: 'Jura',
+                          fontSize: 16,
+                          color: Colors.white,
                         ),
-                        if (_message == 'Email not verified. Check your inbox.')
-                          ElevatedButton(
-                            onPressed: _handleResendVerification,
-                            child: const Text('Resend Verification Email'),
-                          ),
-                        const SizedBox(height: 20),
-                        Text(
-                          _message,
-                          style: const TextStyle(
-                            fontFamily: 'Jura',
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-                        /*Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              icon: Image.asset('assets/google_logo.png',
-                                  height: 40, width: 40),
-                              onPressed: _isLoading ? () {} : _handleGoogleSignIn,
-                            ),
-                            const Text(
-                              'Login via Google',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),*/
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 30),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 50),
-              ],
-            ),
+              ),
+              const SizedBox(height: 50),
+            ],
           ),
         ),
       ),
-    );
-  }
-}
+    ),
+  );
+}}
