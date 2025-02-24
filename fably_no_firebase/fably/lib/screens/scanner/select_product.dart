@@ -2,9 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:fably/screens/auth/login.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:http/http.dart' as http;
-import 'add_images.dart';
 import '../../utils/requests.dart';
 import 'tryon_result.dart';
 
@@ -14,7 +11,7 @@ class SelectProductPage extends StatefulWidget {
 
   File? userImage;
 
-  SelectProductPage({this.userImage});
+  SelectProductPage({super.key, this.userImage});
 
 }
 

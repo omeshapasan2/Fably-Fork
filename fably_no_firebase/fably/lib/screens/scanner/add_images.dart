@@ -17,7 +17,7 @@ class UploadImagesPage extends StatefulWidget {
 
   final String? productId; // Optional input string
 
-  UploadImagesPage({this.productId});
+  const UploadImagesPage({super.key, this.productId});
 
 }
 

@@ -6,7 +6,7 @@ class AuthTextField extends StatelessWidget {
   final bool obscureText;
   final EdgeInsets? margin; // Add margin parameter
 
-  AuthTextField({
+  const AuthTextField({super.key, 
     required this.controller,
     required this.labelText,
     this.obscureText = false,
@@ -43,7 +43,7 @@ class AuthButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
 
-  AuthButton({
+  const AuthButton({super.key, 
     required this.text,
     required this.onPressed,
   });
@@ -52,6 +52,14 @@ class AuthButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: onPressed,
+      
+      style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 34), // Set padding
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(34), // Set border radius
+        ),
+        elevation: 5, // Set shadow
+      ),
       child: Text(
         text,
         style: TextStyle(
@@ -64,14 +72,6 @@ class AuthButton extends StatelessWidget {
         
         
         ),
-      
-      style: ElevatedButton.styleFrom(
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 34), // Set padding
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(34), // Set border radius
-        ),
-        elevation: 5, // Set shadow
-      ),
     );
   }
 }

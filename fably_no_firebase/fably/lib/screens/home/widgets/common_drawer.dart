@@ -68,7 +68,7 @@ Widget build(BuildContext context) {
                 ),
                 Positioned(
                   right: 8,
-                  top: 8,
+                  top: 13,
                   child: IconButton(
                     icon: const Icon(
                       Icons.close,

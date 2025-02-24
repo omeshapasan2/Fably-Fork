@@ -7,7 +7,7 @@ import 'package:fably/utils/requests.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   void _showMessage(String message, BuildContext context) {
     print(message);

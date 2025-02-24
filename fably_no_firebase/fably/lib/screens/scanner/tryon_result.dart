@@ -1,14 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data'; // For handling image bytes
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class VirtualTryOnResultPage extends StatefulWidget {
   final File? inputImage;
   final String id;
 
-  VirtualTryOnResultPage({Key? key, this.inputImage, required this.id})
-      : super(key: key);
+  const VirtualTryOnResultPage({super.key, this.inputImage, required this.id});
 
   @override
   _VirtualTryOnResultPageState createState() => _VirtualTryOnResultPageState();
