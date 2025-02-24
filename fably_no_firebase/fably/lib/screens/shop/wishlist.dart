@@ -255,7 +255,7 @@ class _WishlistPageState extends State<WishlistPage> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text(
-          'Wishlist',
+          'Fably - Wishlist',
           style: TextStyle(),
           ),
         centerTitle: true,
