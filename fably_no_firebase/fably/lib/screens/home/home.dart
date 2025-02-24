@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 //import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/login.dart';
-import '../gender/gender_selection.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 
 import '../shop/product.dart';
 import '../shop/cart.dart';
-import '../shop/wishlist.dart';
-import '../scanner/scanner.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 import 'widgets/common_drawer.dart';
@@ -144,113 +141,96 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Fably - Home'),
-        centerTitle: true,
-        backgroundColor: Colors.black,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CartPage(),
-                  //builder: (context) => ProductPage(product: myProduct),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              signOut().then((o){
-                Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              });
-            },
-          ),
-        ],
-      ),
-      drawer: CommonDrawer(),
-      /*drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.tealAccent),
-              child: Text('Menu',
-                  style: TextStyle(color: Colors.black, fontSize: 24)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_backup_restore),
-              title: const Text('Back to Selection Screen'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AreYouScreen()),
-                );
-              },
-            ),
-          ],
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text(
+        'FABLY',
+        style: TextStyle(
+          
+          fontFamily: 'Italiana',
+          fontSize: 32,
+          fontStyle: FontStyle.italic,
+          color: Colors.white,
         ),
-      ),*/
-      body: LiquidPullToRefresh(
-        color: const Color.fromARGB(255, 255, 255, 255),
-        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-        height: 60.0,
-        showChildOpacityTransition: false,
-        onRefresh: _refreshProducts,
-        child: FutureBuilder<List<Product>>(
-          future: futureProducts,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (snapshot.hasData) {
-              final products = snapshot.data!;
-              return GridView.builder(
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.75,
-                ),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      // Navigate to the ProductPage and pass the selected product
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProductPage(
-                            product: products[index], // Pass the product to ProductPage
-                          ),
-                        ),
-                      );
-                    },
-                    child: ProductCard(product: products[index]),
-                  );
-                },
-              );
-            } else {
-              return const Center(child: Text('No products available.'));
-            }
+      ),
+      centerTitle: true,
+      backgroundColor: Colors.black,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.shopping_bag_outlined),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CartPage(),
+              ),
+            );
           },
         ),
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: () {
+            signOut().then((o){
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            });
+          },
+        ),
+      ],
+    ),
+    drawer: CommonDrawer(),
+    body: LiquidPullToRefresh(
+      color: const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+      height: 60.0,
+      showChildOpacityTransition: false,
+      onRefresh: _refreshProducts,
+      child: FutureBuilder<List<Product>>(
+        future: futureProducts,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            final products = snapshot.data!;
+            return GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductPage(
+                          product: products[index],
+                        ),
+                      ),
+                    );
+                  },
+                  child: ProductCard(product: products[index]),
+                );
+              },
+            );
+          } else {
+            return const Center(child: Text('No products available.'));
+          }
+        },
       ),
-      bottomNavigationBar: CommonBottomNavBar(
-        currentIndex: 0,
-        //onTap: _onNavBarTap,
-      ),
-    );
-  }
+    ),
+    bottomNavigationBar: CommonBottomNavBar(
+      currentIndex: 0,
+    ),
+  );
+}
 }
