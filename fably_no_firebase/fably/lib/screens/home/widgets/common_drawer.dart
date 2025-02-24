@@ -52,7 +52,7 @@ class CommonDrawer extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 SizedBox(
-                  height: 80, // Reduced header height (default is 160)
+                  height: 108, // Reduced header height (default is 160)
                   child: Stack(
                     children: [
                       Container(
