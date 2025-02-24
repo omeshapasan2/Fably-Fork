@@ -290,6 +290,7 @@ Widget build(BuildContext context) {
                   fontFamily: 'Italiana',
                   fontSize: 50,
                   fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
