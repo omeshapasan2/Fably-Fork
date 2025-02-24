@@ -62,7 +62,7 @@ Widget build(BuildContext context) {
                         letterSpacing: 6,
                         fontWeight: FontWeight.bold,
                         color: Colors.black, 
-                        fontSize: 30),
+                        fontSize: 24),
                     ),
                   ),
                 ),
