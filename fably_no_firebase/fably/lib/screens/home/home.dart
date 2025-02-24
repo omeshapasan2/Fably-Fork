@@ -147,7 +147,7 @@ Widget build(BuildContext context) {
       title: const Text(
         'FABLY',
         style: TextStyle(
-          
+          letterSpacing: 3,
           fontFamily: 'Italiana',
           fontSize: 32,
           fontStyle: FontStyle.italic,
