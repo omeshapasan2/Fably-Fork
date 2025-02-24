@@ -169,17 +169,6 @@ Widget build(BuildContext context) {
             );
           },
         ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: () {
-            signOut().then((o){
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            });
-          },
-        ),
       ],
     ),
     drawer: CommonDrawer(),
