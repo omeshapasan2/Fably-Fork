@@ -10,8 +10,6 @@ import 'dart:ui';
 
 class CommonDrawer extends StatelessWidget {
   const CommonDrawer({super.key});
-<<<<<<< HEAD
-=======
   
   Future<void> signOut(BuildContext context) async {
     final requests = BackendRequests();
@@ -32,7 +30,6 @@ class CommonDrawer extends StatelessWidget {
     print(message);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
->>>>>>> 065c73aadb394a0ac1278382678ee8bbb8d27780
 
   @override
   Widget build(BuildContext context) {

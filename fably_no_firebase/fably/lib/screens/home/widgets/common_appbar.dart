@@ -5,9 +5,9 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
 
   const CommonAppBar({
-    super.key,
+    Key? key,
     required this.title,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

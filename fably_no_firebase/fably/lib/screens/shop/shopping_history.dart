@@ -22,7 +22,7 @@ class ShoppingHistoryScreen extends StatelessWidget {
     },
   ];
 
-  const ShoppingHistoryScreen({super.key});
+  ShoppingHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

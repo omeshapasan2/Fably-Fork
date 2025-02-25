@@ -1,9 +1,4 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
-//import 'package:firebase_auth/firebase_auth.dart';
-import '../auth/login.dart';
-=======
->>>>>>> 065c73aadb394a0ac1278382678ee8bbb8d27780
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
@@ -13,6 +8,7 @@ import '../auth/login.dart';
 import '../shop/product.dart';
 import '../shop/cart.dart';
 import '../../utils/requests.dart';
+import '../../utils/prefs.dart';
 import 'widgets/common_drawer.dart';
 import 'widgets/bottom_nav_bar.dart';
 

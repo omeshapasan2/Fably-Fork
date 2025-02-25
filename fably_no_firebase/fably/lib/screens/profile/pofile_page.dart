@@ -8,8 +8,6 @@ import 'package:flutter/material.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
-<<<<<<< HEAD
-=======
 
   void _showMessage(String message, BuildContext context) {
     print(message);
@@ -31,7 +29,6 @@ class ProfilePage extends StatelessWidget {
     }
 
   }
->>>>>>> 065c73aadb394a0ac1278382678ee8bbb8d27780
 
   @override
   Widget build(BuildContext context) {
