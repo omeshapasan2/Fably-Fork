@@ -265,11 +265,22 @@ class _CartPageState extends State<CartPage> {
   @override
   void initState() {
     super.initState();
-
+    
     cartItems = [];
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    final requests = BackendRequests();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if(! await requests.isLoggedIn()){
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
       fetchCartContent();
+    });
+
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
     });    
     /*for (int i=0;i<cartItems.length;i++) {
       cartItems[i]['quantity'] = cartItems[i]['quantity']; // Add or update the 'amount' field to 1

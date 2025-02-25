@@ -2,12 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import '../../utils/prefs.dart';
 import '../home/widgets/bottom_nav_bar.dart';
 import '../home/widgets/common_drawer.dart';
 import '../shop/cart.dart';
 import '../auth/login.dart';
 import '../../utils/requests.dart';
 import 'select_product.dart';
+import 'tryon_result.dart';
 
 class UploadImagesPage extends StatefulWidget {
   @override
@@ -66,6 +68,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                     Text(
                       "Tips for Taking Your Personal Picture",
                       style: TextStyle(
+                        fontFamily: "Ialiana",
+                        fontStyle: FontStyle.italic,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -79,7 +83,13 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                       "3. Wear fitted clothes to ensure accurate virtual try-on.\n"
                       "4. Avoid wearing hats or large accessories.\n"
                       "5. Keep a neutral background to improve results.",
-                      style: TextStyle(fontSize: 16, color: Colors.black87),
+                      style: TextStyle(
+                        height: 2.1,
+                        fontSize: 16, 
+                        color: Colors.black87,
+                        fontFamily: "Kanit",
+                        
+                        fontStyle: FontStyle.italic),
                       textAlign: TextAlign.left,
                     ),
                     SizedBox(height: 20),
@@ -147,6 +157,17 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       );
     } else{
       _showMessage("Virtual Try-On function...");
+
+      Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => VirtualTryOnResultPage(inputImage:_userImage, id: widget.productId ?? ""),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return child; // No animation, just return the new page
+        },
+      ),
+    );
+
     }
 
     return;
@@ -181,10 +202,12 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
 
   Future<void> signOut() async {
     final requests = BackendRequests();
+    final prefs = Prefs();
 
     try{
       final response = await requests.getRequest('logout');
       if (response.statusCode==200){
+        await prefs.clearPrefs();
         _showMessage('Logged out successfully');
       }
     }catch (e) {
@@ -196,9 +219,16 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    final requests = BackendRequests();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if(!await requests.isLoggedIn()){
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
       showCustomPopup(context);
-      //_showMessage(widget.productId ?? 'No product ID');
     });
     
   }
@@ -226,11 +256,12 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              signOut();
-              Navigator.pushReplacement(
+              signOut().then((o){
+                Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+                );
+              });
             },
           ),
         ],
@@ -258,8 +289,8 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                         ),
                         child: Center(
                           child: Icon(
-                            Icons.person,
-                            size: 200,
+                            Icons.man,
+                            size: 300,
                             color: const Color.fromARGB(255, 255, 255, 255),
                           ),
                         ),
@@ -274,7 +305,10 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
                       ),
-                      child: Text('Select Your Image'),
+                      child: Text(
+                        'Select Your Image',
+                        style: TextStyle(fontFamily: "jura", 
+                        fontSize: 18),),
                       
                     ),
                     SizedBox(width: 10),
