@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:fably/screens/home/widgets/common_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -236,7 +237,10 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: CommonAppBar(
+        title: 'Upload Image'
+        ),
+      /*appBar: AppBar(
         title: const Text('Upload Image'),
         centerTitle: true,
         backgroundColor: Colors.black,
@@ -265,7 +269,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
             },
           ),
         ],
-      ),
+      ),*/
       drawer: CommonDrawer(),
       body: SingleChildScrollView(
       physics: BouncingScrollPhysics(),

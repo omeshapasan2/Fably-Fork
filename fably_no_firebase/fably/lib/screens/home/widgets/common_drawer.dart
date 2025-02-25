@@ -1,6 +1,7 @@
 import 'package:fably/screens/home/home.dart';
 import 'package:fably/screens/scanner/add_images.dart';
 import 'package:fably/screens/shop/cart.dart';
+import 'package:fably/screens/shop/shopping_history.dart';
 import 'package:fably/screens/shop/wishlist.dart';
 import 'package:flutter/material.dart';
 import '../../../utils/prefs.dart';
@@ -176,7 +177,8 @@ class CommonDrawer extends StatelessWidget {
                         MaterialPageRoute(builder: (context) => UploadImagesPage()),
                       );
                     },
-                  )),
+                  )
+                ),
                 Padding(
                   padding: const EdgeInsets.only(left: 12.0),
                   child: ListTile(
@@ -198,7 +200,31 @@ class CommonDrawer extends StatelessWidget {
                         MaterialPageRoute(builder: (context) => ProfilePage()),
                       );
                     },
-                  )),
+                  )
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 12.0),
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.list_alt,
+                      color: Colors.white,
+                    ),
+                    title: const Text(
+                      'MY ORDERS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: "Jura",
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2.6),
+                    ),
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => ShoppingHistoryScreen()),
+                      );
+                    },
+                  )
+                ),
               ],
             ),
           ),

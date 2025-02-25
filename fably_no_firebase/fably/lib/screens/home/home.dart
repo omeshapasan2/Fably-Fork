@@ -1,3 +1,4 @@
+import 'package:fably/screens/home/widgets/common_appbar.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -203,7 +204,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
+      appBar: CommonAppBar(
+        title: 'FABLY'
+        ),
+      /*appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.black,
         title: const Text(
@@ -239,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-      ),
+      ),*/
       drawer: CommonDrawer(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,3 +1,4 @@
+import 'package:fably/screens/home/widgets/common_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'dart:convert'; // For JSON decoding, if needed
@@ -253,7 +254,10 @@ class _WishlistPageState extends State<WishlistPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
+      appBar: CommonAppBar(
+        title: 'Fably - WISHLIST'
+        ),
+      /*appBar: AppBar(
         title: const Text(
           'Fably - WISHLIST',
           style: TextStyle(
@@ -292,7 +296,7 @@ class _WishlistPageState extends State<WishlistPage> {
             },
           ),
         ],
-      ),
+      ),*/
       drawer: CommonDrawer(),
             
       body: isLoading ? Center(child: CircularProgressIndicator()) : cartItems.isEmpty ? Center(child: Text('No Items in Wishlist')) : Padding(

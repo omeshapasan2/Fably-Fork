@@ -1,5 +1,6 @@
 import 'package:fably/screens/auth/login.dart';
 import 'package:fably/screens/home/widgets/bottom_nav_bar.dart';
+import 'package:fably/screens/home/widgets/common_appbar.dart';
 import 'package:fably/screens/home/widgets/common_drawer.dart';
 import 'package:fably/screens/shop/cart.dart';
 import 'package:fably/utils/prefs.dart';
@@ -33,7 +34,10 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: CommonAppBar(
+        title: 'Profile'
+        ),
+      /*appBar: AppBar(
         title: const Text('Profile'),
         centerTitle: true,
         backgroundColor: Colors.black,
@@ -62,7 +66,7 @@ class ProfilePage extends StatelessWidget {
             },
           ),
         ],
-      ),
+      ),*/
       drawer: CommonDrawer(),
       backgroundColor: Colors.black,
       body: SafeArea(
