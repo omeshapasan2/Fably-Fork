@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../shop/wishlist.dart';
+import '../../scanner/scanner.dart';
 import '../home.dart';
 import '../../scanner/add_images.dart';
 import '../../profile/pofile_page.dart';
@@ -13,14 +14,14 @@ class CommonBottomNavBar extends StatelessWidget {
   
 
   const CommonBottomNavBar({
-    super.key,
+    Key? key,
     required this.currentIndex,
     //required this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    void showMessage(String message) {
+    void _showMessage(String message) {
       print(message);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
@@ -104,7 +105,7 @@ class CommonBottomNavBar extends StatelessWidget {
                   ),
                 );
                 break;
-            }
+            };
       }
     );
   }

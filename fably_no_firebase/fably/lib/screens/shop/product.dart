@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:convert'; // For JSON decoding, if needed
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-// Import for AreYouScreen
+import 'package:http/http.dart' as http;
+import '../../screens/gender/gender_selection.dart'; // Import for AreYouScreen
+import '../../utils/user_preferences.dart';
 import '../scanner/add_images.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
@@ -330,7 +332,7 @@ class _ProductPageState extends State<ProductPage> {
                     Stack(
                       alignment: Alignment.bottomCenter,
                       children: [
-                        SizedBox(
+                        Container(
                           height: 300,
                           child: PageView.builder(
                             controller: _pageController,

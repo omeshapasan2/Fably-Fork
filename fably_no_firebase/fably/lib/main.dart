@@ -1,10 +1,8 @@
-import 'package:fably/screens/shop/shopping_history.dart';
 import 'package:flutter/material.dart';
 //import 'package:firebase_core/firebase_core.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/register.dart';
 import 'screens/home/home.dart';
-import 'screens/shop/shopping_history.dart'; // Import Shopping History Screen
 
 void main() async {
   //WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +27,7 @@ class MyApp extends StatelessWidget {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
+            backgroundColor:Colors.white,
             foregroundColor: Colors.black,
           ),
         ),
@@ -39,7 +37,6 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomeScreen(),
-        '/shopping_history': (context) => const ShoppingHistoryScreen(), // Added Route
       },
     );
   }

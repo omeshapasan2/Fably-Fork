@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:http/http.dart' as http;
+import 'add_images.dart';
 import '../../utils/requests.dart';
 
 class SelectProductPage extends StatefulWidget {
@@ -9,7 +12,7 @@ class SelectProductPage extends StatefulWidget {
 
   File? userImage;
 
-  SelectProductPage({super.key, this.userImage});
+  SelectProductPage({this.userImage});
 
 }
 
@@ -108,7 +111,7 @@ class ProductCard extends StatelessWidget {
   final dynamic product;
   final VoidCallback onSelect;
 
-  const ProductCard({super.key, required this.product, required this.onSelect});
+  const ProductCard({Key? key, required this.product, required this.onSelect}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
