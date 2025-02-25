@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 
 import '../auth/login.dart';
 import '../shop/product.dart';
-import '../shop/cart.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 import 'widgets/common_drawer.dart';

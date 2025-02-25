@@ -9,7 +9,6 @@ import '../auth/login.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 import '../home/widgets/common_drawer.dart';
-import '../shop/cart.dart';
 import '../shop/product.dart';
 import '../home/widgets/bottom_nav_bar.dart';
 

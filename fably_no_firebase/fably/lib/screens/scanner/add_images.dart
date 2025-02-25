@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import '../../utils/prefs.dart';
 import '../home/widgets/bottom_nav_bar.dart';
 import '../home/widgets/common_drawer.dart';
-import '../shop/cart.dart';
 import '../auth/login.dart';
 import '../../utils/requests.dart';
 import 'select_product.dart';

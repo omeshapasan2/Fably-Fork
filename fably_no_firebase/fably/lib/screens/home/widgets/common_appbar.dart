@@ -5,9 +5,9 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
 
   const CommonAppBar({
-    Key? key,
+    super.key,
     required this.title,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +17,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(
         title,
         style: const TextStyle(
+          height: 6,
           letterSpacing: 3,
           fontFamily: 'jura',
           fontWeight: FontWeight.bold,

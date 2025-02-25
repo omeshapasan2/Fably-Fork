@@ -1,8 +1,6 @@
-import 'package:fably/screens/auth/login.dart';
 import 'package:fably/screens/home/widgets/bottom_nav_bar.dart';
 import 'package:fably/screens/home/widgets/common_appbar.dart';
 import 'package:fably/screens/home/widgets/common_drawer.dart';
-import 'package:fably/screens/shop/cart.dart';
 import 'package:fably/utils/prefs.dart';
 import 'package:fably/utils/requests.dart';
 import 'package:flutter/material.dart';
