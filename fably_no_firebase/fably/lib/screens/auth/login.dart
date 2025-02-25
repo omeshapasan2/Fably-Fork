@@ -4,7 +4,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../home/home.dart';
 import 'register.dart';
 import 'auth_widget.dart';
-// Import for AreYouScreen
+import '../../screens/gender/gender_selection.dart'; // Import for AreYouScreen
+import '../../utils/user_preferences.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,9 +79,9 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setPrefs('cookies', cookies);
       }
 
-      await prefs.setPrefs('userInfo', jsonEncode(userInfo));
+      prefs.setPrefs('userInfo', jsonEncode(userInfo));
 
-      _showMessage("Login successful. User info and cookies saved.");
+      print("Login successful. User info and cookies saved.");
       setState(() {
         _isLoading = true;
       });
@@ -139,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // Login method wrapper to handle void callback
   void _handleLogin() {
     if (!_isLoading) {
-      _login().then((value) => null);
+      _login();
     }
   }
 
@@ -148,6 +149,19 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
     });
+    //try {
+      /*UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      if (userCredential.user?.emailVerified == false) {
+        setState(() {
+          _message = 'Email not verified. Check your inbox.';
+          _isLoading = false;
+        });
+        return;
+      }*/
 
       bool loginSuccess = await loginCustomer(_emailController.text, _passwordController.text);
       setState(() {
@@ -157,11 +171,25 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-
+      // Check if gender is selected
+      bool hasGender = await UserPreferences.hasSelectedGender();
+      if (!hasGender) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AreYouScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    //} /*on FirebaseAuthException*/ catch (e) {
+    /*  setState(() {
+        _message = 'Login Error: $e';
+        _isLoading = false;
+      });
+    }*/
   }
 
   // Google sign-in method wrapper
@@ -252,53 +280,19 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }*/
 
-  
-
   @override
-  void initState() {
-    super.initState();
-    final request = BackendRequests();
-    final prefs = Prefs();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if(await request.isLoggedIn()){
-        print('User is already logged in');
-        print(prefs.getPrefs('userInfo'));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      }
-    });
-  }
-
-  @override
-Widget build(BuildContext context) {
-  return WillPopScope(
-    onWillPop: () async {
-      return false;
-    },
-    child: Scaffold(
+  Widget build(BuildContext context) {
+    return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              const SizedBox(height: 50), // Reduced from 100 to make room for new title
-              const Text(
-                'FABLY',
-                style: TextStyle(
-                  fontFamily: 'jura',
-                  fontSize: 50,
-                  letterSpacing: 3,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 30), // Added spacing between titles
+              const SizedBox(height: 100),
               Align(
                 alignment: Alignment.center,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 300),
+                  constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(
                     children: [
                       const Text(
@@ -311,39 +305,34 @@ Widget build(BuildContext context) {
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 60),
+                      const SizedBox(height: 40),
                       AuthTextField(
-                        controller: _emailController, 
-                        labelText: 'Email',
-                      ),
+                          controller: _emailController, labelText: 'Email',),
                       AuthTextField(
                         controller: _passwordController,
                         labelText: 'Password',
                         obscureText: true,
                       ),
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 20),
                       AuthButton(
                         text: 'LOGIN',
                         onPressed: _isLoading ? () {} : _handleLogin,
                       ),
                       TextButton(
                         onPressed: _isLoading ? null : _handleForgotPassword,
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(color: Colors.white, fontSize: 13, height: 10)
-                        ),
+                        child: const Text('Forgot Password?',
+                            style: TextStyle(color: Colors.white, fontSize: 18,height: 10)),
                       ),
                       TextButton(
                         onPressed: () {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                            MaterialPageRoute(
+                                builder: (context) => const RegisterScreen()),
                           );
                         },
-                        child: const Text(
-                          "Don't have an account? Register",
-                          style: TextStyle(color: Colors.white)
-                        ),
+                        child: const Text("Don't have an account? Register",
+                            style: TextStyle(color: Colors.white)),
                       ),
                       if (_message == 'Email not verified. Check your inbox.')
                         ElevatedButton(
@@ -360,6 +349,20 @@ Widget build(BuildContext context) {
                         ),
                       ),
                       const SizedBox(height: 30),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Image.asset('assets/google_logo.png',
+                                height: 40, width: 40),
+                            onPressed: _isLoading ? () {} : _handleGoogleSignIn,
+                          ),
+                          const Text(
+                            'Login via Google',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -369,6 +372,6 @@ Widget build(BuildContext context) {
           ),
         ),
       ),
-    ),
-  );
-}}
+    );
+  }
+}

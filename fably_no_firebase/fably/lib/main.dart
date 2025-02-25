@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/register.dart';
 import 'screens/home/home.dart';
-// Import Shopping History Screen
+import 'screens/shop/shopping_history.dart'; // Import Shopping History Screen
 
 void main() async {
   //WidgetsFlutterBinding.ensureInitialized();

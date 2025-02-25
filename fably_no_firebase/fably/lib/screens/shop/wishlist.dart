@@ -130,12 +130,10 @@ class _WishlistPageState extends State<WishlistPage> {
 
   Future<void> signOut() async {
     final requests = BackendRequests();
-    final prefs = Prefs();
 
     try{
       final response = await requests.getRequest('logout');
       if (response.statusCode==200){
-        await prefs.clearPrefs();
         _showMessage('Logged out successfully');
       }
     }catch (e) {
@@ -230,20 +228,12 @@ class _WishlistPageState extends State<WishlistPage> {
   @override
   void initState() {
     super.initState();
-    
+
     cartItems = [];
 
-    final requests = BackendRequests();
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if(!await requests.isLoggedIn()){
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      }
-      fetchWishlistContent();
-    });
-   
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+    fetchWishlistContent();
+  });    
     /*for (int i=0;i<cartItems.length;i++) {
       cartItems[i]['quantity'] = cartItems[i]['quantity']; // Add or update the 'amount' field to 1
     }*/
@@ -254,17 +244,7 @@ class _WishlistPageState extends State<WishlistPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text(
-          'Fably - WISHLIST',
-          style: TextStyle(
-            letterSpacing: 3,
-            fontFamily: "Italiana",
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-            fontStyle: FontStyle.italic,
-            color: Colors.white,
-          ),
-          ),
+        title: const Text('Wishlist'),
         centerTitle: true,
         backgroundColor: Colors.black,
         actions: [
@@ -283,12 +263,11 @@ class _WishlistPageState extends State<WishlistPage> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              signOut().then((o){
-                Navigator.pushReplacement(
+              signOut();
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              });
+              );
             },
           ),
         ],

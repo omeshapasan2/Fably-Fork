@@ -317,10 +317,8 @@ class _ProductPageState extends State<ProductPage> {
                             onPressed: () => Navigator.pop(context),
                           ),
                           const Text(
-                            "FABLY",
+                            "Fably",
                             style: TextStyle(
-                              fontFamily: "jura",
-                              letterSpacing: 3,
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -556,7 +554,7 @@ class _ProductPageState extends State<ProductPage> {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(255, 147, 147, 147),
+                              backgroundColor: Colors.orange,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),

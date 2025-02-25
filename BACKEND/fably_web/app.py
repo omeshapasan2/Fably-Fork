@@ -221,7 +221,7 @@ def register():
 
 Thank you for Signing Up to Fably!
 """ '''
-            body = render_template('email_templates/register_customer.html', name = request.form['name'])
+            body = render_template('email_template/register_customer.html', name = request.form['name'])
             mail.send_email(request.form["email"], "Registration to Fably", body)
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('login'))
@@ -268,18 +268,6 @@ def login_customer():
             return response, 200
             
     return "Invalid email or password!", 401
-
-@app.route('/check_logged_in')
-def checkLoggedIn():
-    if "type" in session:
-        if session["type"] == "Customer":
-            return "LoggedIn", 200
-
-    if "user_id" in session:
-        if session["user_id"] != '':
-            return "LoggedIn", 200
-
-    return "LoggedOut", 401
 
 @app.route('/register_customer', methods=['GET', 'POST'])
 def register_customer():
@@ -874,7 +862,7 @@ def password_reset():
 
         
         
-        return render_template("password_reset_success.html"), 200
+        return "Password successfully reset!"
     
     return render_template("reset_password.html"), 200
 
