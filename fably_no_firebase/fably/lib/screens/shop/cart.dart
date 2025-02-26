@@ -357,7 +357,7 @@ class _CartPageState extends State<CartPage> {
                         extentRatio: 0.3,
                         motion: ScrollMotion(),
                         children: [
-                          SlidableAction(
+                          /*SlidableAction(
                             onPressed: (context) {
                               removeItem(index);
                             },
@@ -366,7 +366,7 @@ class _CartPageState extends State<CartPage> {
                             icon: Icons.exposure_minus_1,
                             flex: 1, // Takes 1 units of space
                             //label: 'Remove One',
-                          ),
+                          ),*/
                           SlidableAction(
                             onPressed: (context) { 
                               removeItem(index, count: item['quantity']);
@@ -376,8 +376,7 @@ class _CartPageState extends State<CartPage> {
                             backgroundColor: Colors.black,
                             icon: Icons.delete,
                             flex: 1, // Takes 1 units of space
-                            //closeOnTap: false, // Prevent slider from closing immediately
-                            //label: 'Delete',
+                            label: 'Delete',
                           ),
                         ],
                       ),
@@ -392,6 +391,12 @@ class _CartPageState extends State<CartPage> {
                             fit: BoxFit.cover, // Ensures the image fills the space
                           ),
                           title: Text(item['name']),
+                          trailing: IconButton(
+                            icon: Icon(Icons.exposure_minus_1),
+                            onPressed: () {
+                              removeItem(index); // Handle the button press here
+                            },
+                          ),
                           onTap: () {
                               onCardTap(index);
                             },
