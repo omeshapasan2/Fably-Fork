@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fably/screens/auth/login.dart';
 import 'package:fably/screens/home/widgets/bottom_nav_bar.dart';
 import 'package:fably/screens/home/widgets/common_appbar.dart';
@@ -6,8 +8,21 @@ import 'package:fably/utils/prefs.dart';
 import 'package:fably/utils/requests.dart';
 import 'package:flutter/material.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String name = '';
+
+  @override
+  void initState() {
+    super.initState();
+    getName();
+  }
 
   void _showMessage(String message, BuildContext context) {
     print(message);
@@ -18,54 +33,41 @@ class ProfilePage extends StatelessWidget {
     final requests = BackendRequests();
     final prefs = Prefs();
 
-    try{
+    try {
       final response = await requests.getRequest('logout');
-      if (response.statusCode==200){
-          await prefs.clearPrefs();
+      if (response.statusCode == 200) {
+        await prefs.clearPrefs();
         _showMessage('Logged out successfully', context);
       }
-    }catch (e) {
-      _showMessage('Error Loging out: $e', context);
+    } catch (e) {
+      _showMessage('Error Logging out: $e', context);
     }
+  }
 
+  Future<void> getName() async {
+    final prefs = Prefs();
+    final userInfo = jsonDecode(await prefs.getPrefs("userInfo") ?? '{}');
+    if (userInfo != null && userInfo.isNotEmpty) {
+      if (userInfo['name'] == "") {
+        setState(() {
+          name = 'Rita Smith';
+        });
+        return;
+      }
+      setState(() {
+        name = userInfo['name'];
+      });
+    } else {
+      setState(() {
+        name = 'Rita Smith';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CommonAppBar(
-        title: 'PROFILE'
-        ),
-      /*appBar: AppBar(
-        title: const Text('Profile'),
-        centerTitle: true,
-        backgroundColor: Colors.black,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CartPage(),
-                  //builder: (context) => ProductPage(product: myProduct),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              signOut(context).then((o){
-                Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              });
-            },
-          ),
-        ],
-      ),*/
+      appBar: CommonAppBar(title: 'PROFILE'),
       drawer: CommonDrawer(),
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -121,7 +123,7 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 16),
                   // Name
                   Text(
-                    'Rita Smith',
+                    name,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -205,10 +207,10 @@ class ProfilePage extends StatelessWidget {
                       style: TextStyle(color: Colors.white),
                     ),
                     onTap: () {
-                      signOut(context).then((o){
+                      signOut(context).then((o) {
                         Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
                         );
                       });
                     },
@@ -222,7 +224,6 @@ class ProfilePage extends StatelessWidget {
       ),
       bottomNavigationBar: CommonBottomNavBar(
         currentIndex: 3,
-        //onTap: _onNavBarTap,
       ),
     );
   }

@@ -5,9 +5,9 @@ import 'dart:async';
 import 'prefs.dart';
 
 class BackendRequests {
-   //final url = 'http://192.168.1.102:3000'; // the backend server is defined here.
+  //final url = 'http://192.168.1.7:5000'; // the backend server is defined here.
   final url = 'http://152.53.119.239:5000'; 
-  //final url = 'https://fably.omeshapasan.site';
+  //final url = 'http://192.168.1.102:3000';
   Future<String> getCsrf() async{
     final csrfUrl = Uri.parse('$url/get-csrf-token');
     final csrfResponse = await http.get(csrfUrl);

@@ -327,7 +327,9 @@ def login_customer():
             return_data = {
                 '_id': str(customer['_id']),
                 'email': customer["email"],
-                'name': ''
+                'name': customer["fname"] + " " + customer["lname"],
+                'fname': customer["fname"],
+                'lname': customer["lname"]
             }
 
             response = make_response(jsonify(return_data))
