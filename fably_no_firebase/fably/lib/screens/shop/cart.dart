@@ -366,15 +366,26 @@ class _CartPageState extends State<CartPage> {
                           leading: Image.network( // image
                             item['photos'][0], // Replace this with your image URL
                             width: 60,
-                            height: 60,
+                            height: 67,
                             fit: BoxFit.cover, // Ensures the image fills the space
                           ),
                           title: Text(item['name']),
-                          trailing: IconButton(
-                            icon: Icon(Icons.exposure_minus_1),
-                            onPressed: () {
-                              removeItem(index); // Handle the button press here
+                          trailing: InkWell(
+                            onTap: () {
+                              removeItem(index); // Handle button press
                             },
+                            borderRadius: BorderRadius.circular(8), // Optional for rounded effect
+                            splashColor: Colors.grey.withOpacity(0.3), // Customize ripple color
+                            highlightColor: Colors.grey.withOpacity(0.1), // Customize highlight color
+                            child: Container(
+                              width: MediaQuery.of(context).size.width * 0.12, // 12% of the screen width
+                              height: double.infinity, // Fills the height of the card
+                              alignment: Alignment.center,
+                              child: Icon(
+                                Icons.exposure_minus_1,
+                                size: 28,
+                              ),
+                            ),
                           ),
                           onTap: () {
                               onCardTap(index);
