@@ -67,9 +67,18 @@ class _SelectProductPageState extends State<SelectProductPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Virtual Try-On Selection'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop(); // Navigate back to the previous screen
+          },
+        ),
         backgroundColor: Colors.black,
-        centerTitle: true,
+        title: const Text(
+          "Virtual Try-On Selection",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true, // Centers the title
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())

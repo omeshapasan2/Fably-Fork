@@ -94,6 +94,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop();// Navigate back to the previous screen
+          },
+        ),
+        backgroundColor: Colors.black,
+        title: const Text(
+          "Checkout",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true, // Centers the title
+      ),
+      /*appBar: AppBar(
         backgroundColor: Colors.transparent,
         iconTheme: IconThemeData(color: Colors.white),
         title: Text("Checkout", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -104,7 +118,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             Navigator.of(context).pop();
           },
         ),
-      ),
+      ),*/
       body: Container(
         padding: EdgeInsets.all(16),
         child: Column(

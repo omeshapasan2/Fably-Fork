@@ -254,7 +254,7 @@ class _WishlistPageState extends State<WishlistPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: CommonAppBar(
-        title: 'Fably - WISHLIST'
+        title: 'WISHLIST'
         ),
       /*appBar: AppBar(
         title: const Text(

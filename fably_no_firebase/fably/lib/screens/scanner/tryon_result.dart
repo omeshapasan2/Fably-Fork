@@ -98,7 +98,18 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Virtual Try-On Result'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop(); // Navigate back to the previous screen
+          },
+        ),
+        backgroundColor: Colors.black,
+        title: const Text(
+          "Virtual Try-On Result",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true, // Centers the title
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

@@ -291,7 +291,7 @@ class _CartPageState extends State<CartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
+      /*appBar: AppBar(
         backgroundColor: Colors.transparent,
         iconTheme: IconThemeData(color: Colors.white),
         title: Text("Cart", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -302,43 +302,22 @@ class _CartPageState extends State<CartPage> {
             Navigator.of(context).pop();
           },
         ),
-      ),
-      /*appBar: AppBar(
-        title: Text("Checkout", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        /*title:Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          
-          children:[
-            backButton,
-            /*SizedBox(
-              width: 105,
-              //child:backButton,
-            ),*/
-            
-            const SizedBox(height: 12),
-            const Text(
-              'Cart',
-              style: TextStyle(
-                fontSize: 35, // Set the font size
-                fontWeight: FontWeight.bold, // Optional: Set font weight
-              ),
-            ),
-          ],
-        ),*/
-        //centerTitle: true,
-        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
-        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-        automaticallyImplyLeading: false, // Prevent default back button
-        toolbarHeight: 130,
-        //leading: backButton
       ),*/
+     appBar: AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          Navigator.of(context).pop(); // Navigate back to the previous screen
+        },
+        
+      ),
+      backgroundColor: Colors.black,
+      title: const Text(
+        "My Cart",
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      centerTitle: true, // Centers the title
+    ),
 
       
       body: SafeArea( 
@@ -376,7 +355,7 @@ class _CartPageState extends State<CartPage> {
                             backgroundColor: Colors.black,
                             icon: Icons.delete,
                             flex: 1, // Takes 1 units of space
-                            label: 'Delete',
+                            label: 'Remove',
                           ),
                         ],
                       ),

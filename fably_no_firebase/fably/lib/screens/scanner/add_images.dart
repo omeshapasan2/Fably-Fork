@@ -237,7 +237,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(
-        title: 'Upload Image'
+        title: 'UPLOAD IMAGE'
         ),
       /*appBar: AppBar(
         title: const Text('Upload Image'),

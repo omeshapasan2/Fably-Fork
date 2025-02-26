@@ -33,7 +33,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(
-        title: 'Profile'
+        title: 'PROFILE'
         ),
       /*appBar: AppBar(
         title: const Text('Profile'),

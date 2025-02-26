@@ -111,6 +111,7 @@ class _ShoppingHistoryScreenState extends State<ShoppingHistoryScreen> {
             ); // Navigate back to the previous screen
           },
         ),
+        backgroundColor: Colors.black,
         title: const Text(
           "Shopping History",
           style: TextStyle(fontWeight: FontWeight.bold),
