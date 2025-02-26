@@ -1,3 +1,4 @@
+import 'package:fably/screens/auth/login.dart';
 import 'package:fably/screens/home/widgets/bottom_nav_bar.dart';
 import 'package:fably/screens/home/widgets/common_appbar.dart';
 import 'package:fably/screens/home/widgets/common_drawer.dart';
@@ -203,6 +204,14 @@ class ProfilePage extends StatelessWidget {
                       'Log out',
                       style: TextStyle(color: Colors.white),
                     ),
+                    onTap: () {
+                      signOut(context).then((o){
+                        Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        );
+                      });
+                    },
                     trailing: const Icon(Icons.chevron_right, color: Colors.white),
                   ),
                 ],
