@@ -720,6 +720,185 @@ TODO: add crsf token to the input
             return ("error: "+str(e)), 500
     return abort(404)
 
+@app.route('/add_review/<user_id>/', methods=['GET', 'POST'])
+def add_review(user_id):
+    '''
+accepts input: {'item_id':'1234', 'rating':5, 'review':'Good product'}
+TODO: add crsf token to the input
+'''
+    if request.method=='POST':
+        try:
+            if not customer_logged_in(user_id):
+                return "Unauthorised!", 400
+            
+            # Fetch the user
+            print("Fetch the user wishlist")
+            user = customers_collection.find_one({'_id': ObjectId(user_id)})
+
+            #check if user exists
+            if not user:
+                return "Error: User not found", 404
+
+            item_id = request.get_json()["item_id"]
+            rating = request.get_json()["rating"]
+            review = request.get_json()["review"]
+
+
+            try:
+                item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+                if not item:
+                    return "Error: Item not found", 404
+            except:
+                return "Error: Item not found", 404
+            
+            if "reviews" not in item.keys():
+                item["reviews"] = {}
+                item["review_count"] = 0
+                item["rating_sum"] = 0
+
+            reviews = item["reviews"]
+            
+            reviews[user_id] = {
+                "user_id": user_id,
+                "rating": rating,
+                "review": review
+            }
+
+            item['review_count'] = len(reviews)
+            item['rating_sum'] = item['rating_sum'] = sum([reviews[r]["rating"] for r in reviews.keys()])
+
+            items_collection.update_one(
+                {'_id': ObjectId(item_id)},
+                {'$set': {'reviews': reviews, 'review_count': item['review_count'], 'rating_sum': item['rating_sum']}}
+            )
+            
+            return "Success!", 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
+@app.route('/get_reviews/', methods=['GET', 'POST'])
+def get_reviews():
+    '''
+accepts input: {'item_id':'1234', 'rating':5, 'review':'Good product'}
+TODO: add crsf token to the input
+'''
+    if request.method=='POST':
+        try:
+            if not customer_logged_in(''):
+                return "Unauthorised!", 400
+            
+            item_id = request.get_json()["item_id"]
+
+            try:
+                item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+                if not item:
+                    return "Error: Item not found", 404
+            except:
+                return "Error: Item not found", 404
+            
+            if "reviews" not in item.keys():
+                item["reviews"] = {}
+                item["review_count"] = 0
+                item["rating_sum"] = 0
+
+            reviews = item["reviews"]
+
+            return_reviews = {}
+            
+            for i in reviews.keys():
+                try:
+                    user = customers_collection.find_one({'_id': ObjectId(reviews[i]["user_id"])})
+
+                    if not user:
+                        reviews.pop(i)
+                        item['review_count'] -= 1
+                        item['rating_sum'] -= reviews[i]["rating"]
+                        continue
+                except:
+                    return "Error: User not found", 404
+                return_reviews[i] = {}
+                return_reviews[i]["user_id"] = str(reviews[i]["user_id"])
+                return_reviews[i]["rating"] = reviews[i]["rating"]
+                return_reviews[i]["review"] = reviews[i]["review"]
+                return_reviews[i]["user_name"] = user["fname"] + " " + user["lname"]
+
+            item['review_count'] = len(return_reviews)
+            item['rating_sum'] = sum([return_reviews[r]["rating"] for r in return_reviews.keys()])
+
+            items_collection.update_one(
+                {'_id': ObjectId(item_id)},
+                {'$set': {'reviews': reviews, 'review_count': item['review_count'], 'rating_sum': item['rating_sum']}}
+            )
+            
+            return jsonify(return_reviews), 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
+@app.route('/get_review_average/', methods=['GET', 'POST'])
+def get_review_average():
+    '''
+accepts input: {'item_id':'1234', 'rating':5, 'review':'Good product'}
+TODO: add crsf token to the input
+'''
+    if request.method=='POST':
+        try:
+            if not customer_logged_in(''):
+                return "Unauthorised!", 400
+            
+            item_id = request.get_json()["item_id"]
+
+            try:
+                item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+                if not item:
+                    return "Error: Item not found", 404
+            except:
+                return "Error: Item not found", 404
+            
+            if "reviews" not in item.keys():
+                item["reviews"] = {}
+                item["review_count"] = 0
+                item["rating_sum"] = 0
+
+            reviews = item["reviews"]
+            
+            for i in reviews.keys():
+                try:
+                    user = customers_collection.find_one({'_id': ObjectId(reviews[i]["user_id"])})
+
+                    if not user:
+                        reviews.pop(i)
+                        item['review_count'] -= 1
+                        item['rating_sum'] -= reviews[i]["rating"]
+                except Exception as e:
+                    import traceback
+                    print(traceback.format_exc())
+                    return f"Error: {e}", 404
+                
+
+            items_collection.update_one(
+                {'_id': ObjectId(item_id)},
+                {'$set': {'reviews': reviews, 'review_count': item['review_count'], 'rating_sum': item['rating_sum']}}
+            )
+            
+            return jsonify({"review_count":item["review_count"], "rating_sum":item["rating_sum"]}), 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
 
 @app.route('/remove_from_cart/<user_id>/', methods=['GET', 'POST'])
 def remove_cart_item(user_id):

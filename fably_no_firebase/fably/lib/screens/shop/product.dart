@@ -59,6 +59,7 @@ class _ProductPageState extends State<ProductPage> {
   bool _isWishlisted = false;
   bool _isLoading = true;
   double _averageRating = 0.0;
+  int reviewCount = 0;
 
   Future<String?> getPrefs(pref) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -82,6 +83,33 @@ class _ProductPageState extends State<ProductPage> {
   void _showMessage(String message) {
     print(message);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> getReviewAverage() async {
+    final request = BackendRequests();
+    print("getReviewAverage");
+    
+    final response = await request.postRequest(
+      'get_review_average/',
+      body: {
+        'item_id': widget.product.id,
+      }
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        reviewCount = data['review_count'];
+        if (reviewCount == 0){
+          _averageRating = 0.0;
+        } else {
+          _averageRating = data['rating_sum'] / data['review_count'];
+        }
+      });
+    } else {
+      print("Failed to get review average: ${response.statusCode}");
+      print("Response: ${response.body}");
+    }
   }
 
   Future<bool> addToCart(String id, int quantity) async {
@@ -282,12 +310,13 @@ class _ProductPageState extends State<ProductPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await getReviewAverage();
       inWishlist(widget.product.id).then((x){
         setState((){
           _isWishlisted = x;
           _isLoading = false;
-          _averageRating = 3.3;
+          //_averageRating = 3.3;
         });
       });
     });
@@ -466,8 +495,8 @@ class _ProductPageState extends State<ProductPage> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               // "Average Rating" on the left
-                              const Text(
-                                "Rating",
+                              Text(
+                                "Ratings ($reviewCount)",
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
 
