@@ -289,7 +289,7 @@ def register():
 
 Thank you for Signing Up to Fably!
 """ '''
-            body = render_template('email_templates/register_customer.html', name = request.form['name'])
+            body = render_template('email_templates/register_seller.html', name = request.form['name'])
             mail.send_email(request.form["email"], "Registration to Fably", body)
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('login'))
@@ -372,7 +372,7 @@ def register_customer():
 
 Thank you for Signing Up to Fably!
 """
-            body = render_template('email_templates/register_customer.html')
+            body = render_template('email_templates/register_customer.html', name=request.get_json()['first_name'].strip())
             mail.send_email(request.get_json()["email"].strip(), "Registration to Fably", body)
             
             return "Success!", 200
