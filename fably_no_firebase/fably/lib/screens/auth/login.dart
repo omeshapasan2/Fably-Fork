@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 //import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../home/home.dart';
@@ -275,6 +278,11 @@ class _LoginScreenState extends State<LoginScreen> {
 Widget build(BuildContext context) {
   return WillPopScope(
     onWillPop: () async {
+      if (Platform.isAndroid) {
+        SystemNavigator.pop(); // For Android
+      } else if (Platform.isIOS) {
+        exit(0); // For iOS and other platforms
+      }
       return false;
     },
     child: Scaffold(

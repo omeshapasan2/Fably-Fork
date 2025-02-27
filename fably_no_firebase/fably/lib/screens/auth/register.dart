@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:async';
 import '../home/home.dart';
@@ -125,114 +128,125 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
 Widget build(BuildContext context) {
-  return Scaffold(
-    body: SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 50), // Reduced to make room for new title
-            const Text(
-              'FABLY',
-              style: TextStyle(
-                fontFamily: 'jura',
-                fontSize: 50,
-                letterSpacing: 3,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 30), // Added spacing between titles
-            Align(
-              alignment: Alignment.center,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  children: [
-                    const Text(
-                      'REGISTER',
-                      style: TextStyle(
-                        letterSpacing: 8,
-                        fontFamily: 'Jura',
-                        fontSize: 53,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-
-                    // First Name Field
-                    AuthTextField(
-                      controller: _firstNameController, 
-                      labelText: 'First Name',
-                    ),
-
-                    // Last Name Field
-                    AuthTextField(
-                      controller: _lastNameController, 
-                      labelText: 'Last Name',
-                    ),
-
-                    // Email Field
-                    AuthTextField(
-                      controller: _emailController, 
-                      labelText: 'Email',
-                    ),
-
-                    // Password Field
-                    AuthTextField(
-                      controller: _passwordController,
-                      labelText: 'Password',
-                      obscureText: true,
-                    ),
-
-                    // Confirm Password Field
-                    AuthTextField(
-                      controller: _confirmPasswordController,
-                      labelText: 'Confirm Password',
-                      obscureText: true,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Register Button
-                    AuthButton(text: 'REGISTER', onPressed: _register),
-
-                    const SizedBox(height: 50),
-
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen()
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Already have an account? Login',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    Text(
-                      _message,
-                      style: const TextStyle(
-                        fontFamily: 'Jura',
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-                  ],
+  // ignore: deprecated_member_use
+  return WillPopScope(
+    onWillPop: () async {
+      if (Platform.isAndroid) {
+        SystemNavigator.pop(); // For Android
+      } else if (Platform.isIOS) {
+        exit(0); // For iOS and other platforms
+      }
+      return false;
+    },
+    child:Scaffold(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 50), // Reduced to make room for new title
+              const Text(
+                'FABLY',
+                style: TextStyle(
+                  fontFamily: 'jura',
+                  fontSize: 50,
+                  letterSpacing: 3,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-            ),
-            const SizedBox(height: 50),
-          ],
+              const SizedBox(height: 30), // Added spacing between titles
+              Align(
+                alignment: Alignment.center,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'REGISTER',
+                        style: TextStyle(
+                          letterSpacing: 8,
+                          fontFamily: 'Jura',
+                          fontSize: 53,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+
+                      // First Name Field
+                      AuthTextField(
+                        controller: _firstNameController, 
+                        labelText: 'First Name',
+                      ),
+
+                      // Last Name Field
+                      AuthTextField(
+                        controller: _lastNameController, 
+                        labelText: 'Last Name',
+                      ),
+
+                      // Email Field
+                      AuthTextField(
+                        controller: _emailController, 
+                        labelText: 'Email',
+                      ),
+
+                      // Password Field
+                      AuthTextField(
+                        controller: _passwordController,
+                        labelText: 'Password',
+                        obscureText: true,
+                      ),
+
+                      // Confirm Password Field
+                      AuthTextField(
+                        controller: _confirmPasswordController,
+                        labelText: 'Confirm Password',
+                        obscureText: true,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Register Button
+                      AuthButton(text: 'REGISTER', onPressed: _register),
+
+                      const SizedBox(height: 50),
+
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen()
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Already have an account? Login',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Text(
+                        _message,
+                        style: const TextStyle(
+                          fontFamily: 'Jura',
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 50),
+            ],
+          ),
         ),
       ),
     ),

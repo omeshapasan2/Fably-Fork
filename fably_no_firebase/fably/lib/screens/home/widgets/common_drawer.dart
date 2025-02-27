@@ -43,7 +43,7 @@ class CommonDrawer extends StatelessWidget {
         ),
         SizedBox(
           width: 280, // Increased overall drawer width
-          height: 430,
+          height: 450,
           child: Drawer(
             child: ListView(
               padding: EdgeInsets.zero,

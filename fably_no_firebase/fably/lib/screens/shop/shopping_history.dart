@@ -3,6 +3,7 @@ import 'dart:ffi';
 
 import 'package:fably/screens/auth/login.dart';
 import 'package:fably/screens/home/home.dart';
+import 'package:fably/screens/shop/order_page.dart';
 //import 'package:fably/screens/shop/order_page.dart';
 import 'package:fably/utils/prefs.dart';
 import 'package:fably/utils/requests.dart';
@@ -36,7 +37,7 @@ class _ShoppingHistoryScreenState extends State<ShoppingHistoryScreen> {
   ];
   bool isLoading = true;
 
-  /*void goToOrder(index){
+  void goToOrder(index){
     final data = orders[index];
 
     Navigator.pushReplacement(
@@ -45,7 +46,7 @@ class _ShoppingHistoryScreenState extends State<ShoppingHistoryScreen> {
         builder: (context) => OrderPage(orderId: data['_id']),
       ),
     );
-  }*/
+  }
 
   @override
   void initState() {
@@ -100,57 +101,66 @@ class _ShoppingHistoryScreenState extends State<ShoppingHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            ); // Navigate back to the previous screen
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+        return true;
+      },
+      child:Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+              ); // Navigate back to the previous screen
+            },
+          ),
+          backgroundColor: Colors.black,
+          title: const Text(
+            "Shopping History",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true, // Centers the title
+        ),
+        body: isLoading ? Center(child: CircularProgressIndicator()) : this.orders.isEmpty ? Center(child: Text('No orders found')) : ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: orders.length,
+          itemBuilder: (context, index) {
+            final order = orders[index];
+            return Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 3,
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(16),
+                onTap: () {
+                  goToOrder(index);
+                },
+                title: Text("Order: ${order['_id']}",
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Date: ${order['orderDate']}"),
+                    Text("Total: \$${order['total']}"),
+                    Text("Status: ${order['status']}",
+                        style: TextStyle(
+                            color: order['status'] == 'Delivered'
+                                ? Colors.green
+                                : order['status'] == 'Shipped'
+                                    ? Colors.orange
+                                    : Colors.red)),
+                  ],
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              ),
+            );
           },
         ),
-        backgroundColor: Colors.black,
-        title: const Text(
-          "Shopping History",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true, // Centers the title
-      ),
-      body: isLoading ? Center(child: CircularProgressIndicator()) : this.orders.isEmpty ? Center(child: Text('No orders found')) : ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: orders.length,
-        itemBuilder: (context, index) {
-          final order = orders[index];
-          return Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 3,
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(16),
-              onTap: () {
-                //goToOrder(index);
-              },
-              title: Text("Order: ${order['_id']}",
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Date: ${order['orderDate']}"),
-                  Text("Total: \$${order['total']}"),
-                  Text("Status: ${order['status']}",
-                      style: TextStyle(
-                          color: order['status'] == 'Delivered'
-                              ? Colors.green
-                              : order['status'] == 'Shipped'
-                                  ? Colors.orange
-                                  : Colors.red)),
-                ],
-              ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            ),
-          );
-        },
       ),
     );
   }
