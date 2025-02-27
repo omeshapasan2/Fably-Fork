@@ -17,6 +17,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String name = '';
+  String email = '';
 
   @override
   void initState() {
@@ -51,15 +52,18 @@ class _ProfilePageState extends State<ProfilePage> {
       if (userInfo['name'] == "") {
         setState(() {
           name = 'Rita Smith';
+          email = 'rita@gmail.com';
         });
         return;
       }
       setState(() {
         name = userInfo['name'];
+        email = userInfo['email'];
       });
     } else {
       setState(() {
         name = 'Rita Smith';
+        email = 'rita@gmail.com';
       });
     }
   }
@@ -164,7 +168,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     trailing: Text(
-                      'rita@gmail.com',
+                      email,
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 16,
