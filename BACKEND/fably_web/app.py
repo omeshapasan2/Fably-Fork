@@ -113,6 +113,9 @@ def home():
 def checkout():
     """Handles checkout form submission from Flutter"""
     try:
+        if not verify_csrf(request.headers.get('X-CSRFToken')):
+            return "Unauthorised CSRF!", 400
+
         if not customer_logged_in(""):
             print("Unauthorised")
             return "Unauthorised!", 400
@@ -190,6 +193,10 @@ def checkout():
 @login_required
 def get_checkouts():
     """Retrieve all checkout records (Admin Only)"""
+
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+    
     checkouts = list(checkout_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id
     return jsonify(checkouts)
 
@@ -205,6 +212,9 @@ def get_orders():
 ### User Orders
 @app.route('/customer_orders/<user_id>/', methods=['POST'])
 def get_user_orders(user_id):
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+    
     if not customer_logged_in(user_id):
         return "Unauthorised!", 400
 
@@ -231,6 +241,10 @@ def get_user_orders(user_id):
 ### User Order
 @app.route('/customer_orders_items/<user_id>/', methods=['POST'])
 def get_user_order_items(user_id):
+
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+
     if not customer_logged_in(user_id):
         return "Unauthorised!", 400
 
@@ -322,6 +336,7 @@ def login_customer():
             session["type"] = "Customer"
             session["email"] = customer["email"]
             session["user_id"] = str(customer["_id"])
+            session["csrf"] = str(request.headers.get('X-CSRFToken'))
             customer["_id"] = str(customer["_id"])
 
             return_data = {
@@ -519,6 +534,9 @@ def get_products():
 @app.route('/get_cart/<user_id>/', methods=['GET'])
 def get_cart_items(user_id):
     try:
+
+        if not verify_csrf(request.headers.get('X-CSRFToken')):
+            return "Unauthorised CSRF!", 400
         
         if not customer_logged_in(user_id):
             return "Unauthorised!", 400
@@ -561,6 +579,8 @@ def get_cart_items(user_id):
 @app.route('/get_wishlist/<user_id>/', methods=['GET'])
 def get_wishlist_items(user_id):
     try:
+        if not verify_csrf(request.headers.get('X-CSRFToken')):
+            return "Unauthorised CSRF!", 400
         
         if not customer_logged_in(user_id):
             return "Unauthorised!", 400
@@ -612,6 +632,9 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -672,6 +695,9 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -728,6 +754,9 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -789,6 +818,9 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(''):
                 return "Unauthorised!", 400
             
@@ -852,6 +884,9 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(''):
                 return "Unauthorised!", 400
             
@@ -908,6 +943,9 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -955,6 +993,9 @@ accepts input: {'item_id':'1234', 'quantity':1}
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -1000,6 +1041,9 @@ accepts input: {'item_id':'1234', 'quantity':1}
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -1133,6 +1177,11 @@ def verify_hash_value(raw_value, hashed_value):
         return True
     else:
         return False
+
+def verify_csrf(csrf):
+    if csrf == session["csrf"]:
+        return True
+    return False
 
 def customer_logged_in(user_id):
     if user_id=="":
