@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data'; // For handling image bytes
+import 'package:fably/utils/requests.dart';
 import 'package:flutter/material.dart';
 
 class VirtualTryOnResultPage extends StatefulWidget {
@@ -16,6 +18,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
   Uint8List? resultImageBytes; // To store the image bytes from the backend
   bool isLoading = false;
   String? errorMessage;
+  String image_url = "";
 
   @override
   void initState() {
@@ -50,12 +53,50 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
 
     // --------------------------------------------------------
 
+    
+    final imageFile = widget.inputImage;
+    final requests = BackendRequests();
+
+    if (imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select an image')),
+      );
+      return;
+    }
+
+    // Convert image to Base64
+    final bytes = await imageFile!.readAsBytes();
+    final base64Image = base64Encode(bytes);
+
+    // JSON payload
+    final payload = {
+      "item_id": widget.id, // Example ID
+      "image": base64Image,
+    };
+
+    // Send POST request
+    final response = await requests.postRequest(
+      'virtual_try_on',
+      body: payload,
+    );
+
+    // Handle the response
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload successful: ${response.body}')),
+      );
+
+      image_url = response.body;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload failed: ${response.body}')),
+      );
+    }
     setState(() {
       // temporary
       isLoading = false;
     });
-
-
+  
 
     /*
     try {
@@ -115,14 +156,15 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
         padding: const EdgeInsets.all(16.0),
         child: Center(
           child: isLoading
-              ? CircularProgressIndicator()
+            ? CircularProgressIndicator()
               : errorMessage != null
                   ? Text(
                       errorMessage!,
                       style: TextStyle(color: Colors.red),
                     )
-                  : resultImageBytes != null
-                      ? Image.memory(resultImageBytes!) // Display the received image
+                  : //resultImageBytes != null
+                  image_url != ""
+                      ? Image.network(image_url!) // Display the received image
                       : Text('No result to display.'),
         ),
       ),

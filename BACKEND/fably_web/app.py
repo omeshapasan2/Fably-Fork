@@ -1,10 +1,16 @@
+import base64
+from io import BytesIO
+import cloudinary
+import cloudinary.uploader
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session, abort, make_response
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from pymongo import MongoClient
+import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from bson import ObjectId
 from datetime import datetime, timedelta
+import time
 import hashlib
 import config
 from models import Seller
@@ -12,12 +18,14 @@ from werkzeug.utils import secure_filename
 import os
 from cloudinary.uploader import upload
 from cloudinary.utils import cloudinary_url
-from cloudinary.api import delete_resources_by_prefix
+from cloudinary.api import delete_resources_by_prefix, delete_resources
 from flask import Flask, jsonify
 from flask_pymongo import PyMongo
 from flask_cors import CORS
 import secrets
 import hmac
+from PIL import Image
+
 
 import send_email as mail
 
@@ -1165,11 +1173,169 @@ def password_reset():
         uid = request.args.get('uid')  # Extract UID from the query parameter
         customers_collection.update_one({'_id': ObjectId(uid)}, {'$set': {'password': hashed_password}})
 
-        
-        
         return render_template("password_reset_success.html"), 200
     
     return render_template("reset_password.html"), 200
+
+@app.route('/virtual_try_on', methods = ['POST'])
+def virtual_try_on():
+    # Save the original configuration
+    
+    cloudinary.config(
+        cloud_name=config.CLOUDINARY_CLOUD_NAME,
+        api_key=config.CLOUDINARY_API_KEY,
+        api_secret=config.CLOUDINARY_API_SECRET
+    )
+
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+
+    if not customer_logged_in(""):
+        return "Unauthorised!", 400
+    
+    try:
+        # Get the ID from the form data
+        item_id = request.get_json()['item_id']
+        if not item_id:
+            return 'Item ID is required', 400
+
+        # Get the Base64-encoded image
+        image_data = request.get_json()['image']
+        if not image_data:
+            return 'Error: Image file is required', 400
+        
+        # Decode the Base64 image
+        try:
+            image = Image.open(BytesIO(base64.b64decode(image_data)))
+        except Exception as e:
+            return 'Invalid image data', 400
+
+        # Save the image file (optional)
+        image.save(f'inputs/person.png')
+        # fetched person image and added to the inputs folder
+
+        item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+        image2 = fetch_image_from_cloudinary(item['photos'][0])
+
+        image2.save(f'inputs/cloth.png')
+        #||| added image of the cloth to the inputs folder
+
+        # virtual try on processing starts here
+
+        # temporary code to copy the person image to the outputs folder
+        image.save(f'outputs/output.png')
+
+        #||| virtual try on processing ends here with the output image saved in the outputs folder
+
+        user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+
+        if "virtualTryOns" not in user.keys():
+            user["virtualTryOns"] = {}
+        
+        if item_id in user["virtualTryOns"].keys():
+            delete_cloudinary_image(user["virtualTryOns"][item_id])
+            user["virtualTryOns"][item_id] = {}
+            print("Deleted previous image")
+        user["virtualTryOns"][item_id] = {}
+        
+        user["virtualTryOns"][item_id]["publicId"] = upload_image_to_cloudinary("outputs/output.png")
+        image_secure_url = generate_secure_cloudinary_url(user["virtualTryOns"][item_id]["publicId"])
+        print("URL:",image_secure_url)
+        print("Uploaded new image:", user["virtualTryOns"][item_id]["publicId"])
+
+        customers_collection.update_one(
+            {'_id': ObjectId(session["user_id"])},  # Query to find the user
+            {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
+        )
+
+        #||| uploaded the image to cloudinary
+        '''
+        cloudinary.config(
+            cloud_name=original_config['cloud_name'],
+            api_key=original_config['api_key'],
+            api_secret=original_config['api_secret']
+        )
+        '''
+        
+
+        return image_secure_url
+        #return f'Image and ID received successfully | id : {item_id} ', 200
+    except Exception as e:
+        '''
+        cloudinary.config(
+            cloud_name=original_config['cloud_name'],
+            api_key=original_config['api_key'],
+            api_secret=original_config['api_secret']
+        )
+        '''
+        import traceback
+        print(traceback.format_exc())
+        print('Error: ' + str(e))
+        return 'Error: ' + str(e), 500
+
+def fetch_image_from_cloudinary(url):
+    """
+    Fetches an image from Cloudinary using its public ID.
+
+    Args:
+        public_id (str): The public ID of the image in Cloudinary.
+        cloud_name (str): The name of your Cloudinary account.
+
+    Returns:
+        Image object: PIL.Image object of the fetched image.
+    """
+    # Construct the Cloudinary URL
+    #cloudinary_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/{public_id}.jpg"
+    #cloudinary_url = "https://res.cloudinary.com/dldgeyki5/image/upload/v1740417525/uo4dwcd19lwekkruxfnu.jpg"
+    cloudinary_url = url
+
+    try:
+        # Make the GET request to Cloudinary
+        response = requests.get(cloudinary_url)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+
+        # Load the image into a PIL Image object
+        image = Image.open(BytesIO(response.content))
+        return image
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching the image: {e}")
+        return None
+
+def generate_secure_cloudinary_url(public_id):
+    expiration = int(time.time()) + 3600  # URL valid for 1 hour
+    url, _ = cloudinary_url(
+        public_id,
+        type='authenticated',  # For authenticated resources
+        sign_url=True,
+        expires_at=expiration  # Optional: Expiration timestamp
+    )
+    return url
+
+def delete_cloudinary_image(tryOnData):
+    #url = tryOnData['url']
+    public_id = tryOnData['publicId']
+    #public_id = url.split("/")[-1].split(".")[0]  # Extract public ID
+    #delete_resources_by_prefix(public_id)
+    response = cloudinary.uploader.destroy(public_id, type="authenticated")  # Delete the exact resource
+    print(f"Deleted image with public ID: {public_id}, Response: {response}")
+
+def upload_image_to_cloudinary(image_path):
+    """
+    Uploads an image to Cloudinary.
+    """
+    try:
+        # Open the image file in binary mode
+        with open(image_path, "rb") as image_file:
+            # Upload the image to Cloudinary
+            upload_result = upload(image_file, type='authenticated')
+        
+        # Return the secure URL of the uploaded image
+        return upload_result['public_id']
+    except Exception as e:
+        print(f"Error uploading image to Cloudinary: {e}")
+        return None
 
 def verify_hash_value(raw_value, hashed_value):
     hashed_user_token = hashlib.sha256(raw_value.encode()).hexdigest()
