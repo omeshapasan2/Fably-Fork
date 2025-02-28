@@ -1,3 +1,4 @@
+import 'package:fably/screens/shop/review_page.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert'; // For JSON decoding, if needed
 import 'dart:async';
@@ -60,6 +61,7 @@ class _ProductPageState extends State<ProductPage> {
   bool _isLoading = true;
   double _averageRating = 0.0;
   int reviewCount = 0;
+  int sumRating = 0;
 
   Future<String?> getPrefs(pref) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -100,6 +102,7 @@ class _ProductPageState extends State<ProductPage> {
       final data = jsonDecode(response.body);
       setState(() {
         reviewCount = data['review_count'];
+        sumRating = data['rating_sum'];
         if (reviewCount == 0){
           _averageRating = 0.0;
         } else {
@@ -476,10 +479,17 @@ class _ProductPageState extends State<ProductPage> {
                     const SizedBox(height: 10),
                     GestureDetector(
                       onTap: () {
-                        /*Navigator.push(
+                        Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => ReviewsPage()),
-                        );*/
+                          MaterialPageRoute(builder: (context) => 
+                            ReviewPage(
+                              itemName: widget.product.name,
+                              itemId: widget.product.id,
+                              sumRating: sumRating,
+                              ratingCount: reviewCount,
+                            ),
+                          ),
+                        );
                       },
                       child: Card(
                         elevation: 4,
