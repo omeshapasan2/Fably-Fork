@@ -54,12 +54,11 @@ def create_blank_white_png_like(image_path, output_path="blank_white.png"):
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
-
-def tryOn():
+def tryOn(root_folder):
     # --- Image Paths ---
-    input_image_path = "inputs/person.png"  # <--- REPLACE WITH PATH TO YOUR PERSON IMAGE
-    garment_image_path = "inputs/cloth.png"  # <--- REPLACE WITH PATH TO YOUR GARMENT IMAGE
-    output_blank_png = "outputs/blank_white_output.png"
+    input_image_path = f"{root_folder}/inputs/person.png"  # <--- REPLACE WITH PATH TO YOUR PERSON IMAGE
+    garment_image_path = f"{root_folder}/inputs/cloth.png"  # <--- REPLACE WITH PATH TO YOUR GARMENT IMAGE
+    output_blank_png = f"{root_folder}/outputs/blank_white_output.png"
 
     # --- Check if input files exist ---
     if not os.path.exists(input_image_path):
@@ -101,7 +100,7 @@ def tryOn():
                     # Get the current directory (where app.py is located)
                     current_directory = os.path.dirname(os.path.abspath(__file__))
                     # Define the destination path for the output file
-                    output_file_name = "outputs/output_image.webp"
+                    output_file_name = f"{root_folder}/outputs/output_image.webp"
                     destination_path = os.path.join(current_directory, output_file_name)
                     # Copy the file from the temporary directory to the current directory
                     shutil.copy(result, destination_path)

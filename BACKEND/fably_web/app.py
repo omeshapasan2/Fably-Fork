@@ -1,5 +1,6 @@
 import base64
 from io import BytesIO
+from pathlib import Path
 import cloudinary
 import cloudinary.uploader
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session, abort, make_response
@@ -1210,16 +1211,34 @@ def virtual_try_on_endpoint():
             image = Image.open(BytesIO(base64.b64decode(image_data)))
         except Exception as e:
             return 'Invalid image data', 400
+        
+        root_folder = f"try_ons/{session['user_id']}"
+
+        folder_path = Path(root_folder+"/inputs")
+
+        if not folder_path.exists():
+            folder_path.mkdir(parents=True, exist_ok=True)
+            print(f"Folder created: {folder_path}")
+        else:
+            print(f"Folder already exists: {folder_path}")
+
+        folder_path = Path(root_folder+"/outputs")
+
+        if not folder_path.exists():
+            folder_path.mkdir(parents=True, exist_ok=True)
+            print(f"Folder created: {folder_path}")
+        else:
+            print(f"Folder already exists: {folder_path}")
 
         # Save the image file (optional)
-        image.save(f'inputs/person.png')
+        image.save(f'{root_folder}/inputs/person.png')
         # fetched person image and added to the inputs folder
 
         item = items_collection.find_one({'_id': ObjectId(item_id)})
 
         image2 = fetch_image_from_cloudinary(item['photos'][0])
 
-        image2.save(f'inputs/cloth.png')
+        image2.save(f'{root_folder}/inputs/cloth.png')
         #||| added image of the cloth to the inputs folder
 
         # virtual try on processing starts here
@@ -1227,15 +1246,16 @@ def virtual_try_on_endpoint():
         # temporary code to copy the person image to the outputs folder
         debug = False
         if 'debug' in request.get_json():
-            if request.get_json()['debig'].lower() == 'true':
+            if request.get_json()['debug'].lower() == 'true':
+                print("Debug mode")
                 debug = True
 
         if debug:
-            image.save(f'outputs/output.png')
+            image.save(f'{root_folder}/outputs/output.png')
 
         else:
 
-            result_text = virtual_try_on.tryOn()
+            result_text = virtual_try_on.tryOn(root_folder)
 
             if result_text != "Success":
                 import traceback
@@ -1243,10 +1263,10 @@ def virtual_try_on_endpoint():
                 return result_text, 500
 
             try:
-                with Image.open('outputs/output_image.webp') as img:
-                    img.save('outputs/output.png', format="PNG")
-                print(f"Image successfully converted to {'outputs/output.png'}")
-                os.remove('outputs/output_image.webp')
+                with Image.open(f'{root_folder}/outputs/output_image.webp') as img:
+                    img.save(f'{root_folder}/outputs/output.png', format="PNG")
+                print(f"Image successfully converted to {f'{root_folder}/outputs/output.png'}")
+                os.remove(f'{root_folder}/outputs/output_image.webp')
             except Exception as e:
                 import traceback
                 print(traceback.format_exc())
@@ -1261,12 +1281,15 @@ def virtual_try_on_endpoint():
             user["virtualTryOns"] = {}
         
         if item_id in user["virtualTryOns"].keys():
-            delete_cloudinary_image(user["virtualTryOns"][item_id])
+            try:
+                delete_cloudinary_image(user["virtualTryOns"][item_id])
+            except Exception as e:
+                print(e)
             user["virtualTryOns"][item_id] = {}
             print("Deleted previous image")
         user["virtualTryOns"][item_id] = {}
         
-        user["virtualTryOns"][item_id]["publicId"] = upload_image_to_cloudinary("outputs/output.png")
+        user["virtualTryOns"][item_id]["publicId"] = upload_image_to_cloudinary(f"{root_folder}/outputs/output.png")
         image_secure_url = generate_secure_cloudinary_url(user["virtualTryOns"][item_id]["publicId"])
         print("URL:",image_secure_url)
         print("Uploaded new image:", user["virtualTryOns"][item_id]["publicId"])
@@ -1275,9 +1298,22 @@ def virtual_try_on_endpoint():
             {'_id': ObjectId(session["user_id"])},  # Query to find the user
             {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
         )
-        os.remove('inputs/cloth.png')
-        os.remove('inputs/person.png')
-        os.remove('outputs/output.png')
+        try:
+            os.remove(f'{root_folder}/inputs/cloth.png')
+        except Exception as e:
+            print(e)
+        try:
+            os.remove(f'{root_folder}/inputs/person.png')
+        except Exception as e:
+            print(e)
+        try:
+            os.remove(f'{root_folder}/outputs/output.png')
+        except Exception as e:
+            print(e)
+        try:
+            os.remove(f'{root_folder}/outputs/blank_white_output.png')
+        except Exception as e:
+            print(e)
 
         #||| uploaded the image to cloudinary
         
