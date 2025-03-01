@@ -364,7 +364,7 @@ class _WishlistPageState extends State<WishlistPage> {
                   },
                 ),
               ),
-              Divider(),
+              /*Divider(),
               
               SizedBox(
                 width: double.infinity,
@@ -392,7 +392,7 @@ class _WishlistPageState extends State<WishlistPage> {
                   },
                   child: Text('Add all to cart'),
                 ),
-              ),
+              ),*/
             ],
           ),
         ),
