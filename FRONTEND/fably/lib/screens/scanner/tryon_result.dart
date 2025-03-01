@@ -72,6 +72,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
     final payload = {
       "item_id": widget.id, // Example ID
       "image": base64Image,
+      "debug": "true",
     };
 
     // Send POST request

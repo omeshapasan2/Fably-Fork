@@ -28,6 +28,7 @@ from PIL import Image
 
 
 import send_email as mail
+import virtual_try_on
 
 reset_tokens = {}
 
@@ -1178,7 +1179,7 @@ def password_reset():
     return render_template("reset_password.html"), 200
 
 @app.route('/virtual_try_on', methods = ['POST'])
-def virtual_try_on():
+def virtual_try_on_endpoint():
     # Save the original configuration
     
     cloudinary.config(
@@ -1224,7 +1225,33 @@ def virtual_try_on():
         # virtual try on processing starts here
 
         # temporary code to copy the person image to the outputs folder
-        image.save(f'outputs/output.png')
+        debug = False
+        if 'debug' in request.get_json():
+            if request.get_json()['debig'].lower() == 'true':
+                debug = True
+
+        if debug:
+            image.save(f'outputs/output.png')
+
+        else:
+
+            result_text = virtual_try_on.tryOn()
+
+            if result_text != "Success":
+                import traceback
+                print(traceback.format_exc())
+                return result_text, 500
+
+            try:
+                with Image.open('outputs/output_image.webp') as img:
+                    img.save('outputs/output.png', format="PNG")
+                print(f"Image successfully converted to {'outputs/output.png'}")
+                os.remove('outputs/output_image.webp')
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                print(f"An error occurred while converting webP to PNG: {e}")
+                return f"An error occurred while converting webP to PNG: {e}", 500
 
         #||| virtual try on processing ends here with the output image saved in the outputs folder
 
@@ -1248,15 +1275,11 @@ def virtual_try_on():
             {'_id': ObjectId(session["user_id"])},  # Query to find the user
             {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
         )
+        os.remove('inputs/cloth.png')
+        os.remove('inputs/person.png')
+        os.remove('outputs/output.png')
 
         #||| uploaded the image to cloudinary
-        '''
-        cloudinary.config(
-            cloud_name=original_config['cloud_name'],
-            api_key=original_config['api_key'],
-            api_secret=original_config['api_secret']
-        )
-        '''
         
 
         return image_secure_url
@@ -1273,6 +1296,7 @@ def virtual_try_on():
         print(traceback.format_exc())
         print('Error: ' + str(e))
         return 'Error: ' + str(e), 500
+
 
 def fetch_image_from_cloudinary(url):
     """
