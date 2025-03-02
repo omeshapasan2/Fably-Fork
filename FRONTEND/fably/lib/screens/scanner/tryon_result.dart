@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data'; // For handling image bytes
+import 'package:fably/utils/globals.dart';
 import 'package:fably/utils/requests.dart';
 import 'package:flutter/material.dart';
 
@@ -67,12 +68,14 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
     // Convert image to Base64
     final bytes = await imageFile!.readAsBytes();
     final base64Image = base64Encode(bytes);
+    String debugMode = "$tryOnDebugMode";
+    print("debugMode = $debugMode");
 
     // JSON payload
     final payload = {
       "item_id": widget.id, // Example ID
       "image": base64Image,
-      "debug": "true",
+      "debug": debugMode,
     };
 
     // Send POST request

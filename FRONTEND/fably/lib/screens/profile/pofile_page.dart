@@ -5,6 +5,7 @@ import 'package:fably/screens/auth/login.dart';
 import 'package:fably/screens/home/widgets/bottom_nav_bar.dart';
 import 'package:fably/screens/home/widgets/common_appbar.dart';
 import 'package:fably/screens/home/widgets/common_drawer.dart';
+import 'package:fably/utils/globals.dart';
 import 'package:fably/utils/prefs.dart';
 import 'package:fably/utils/requests.dart';
 import 'package:flutter/material.dart';
@@ -199,6 +200,22 @@ class _ProfilePageState extends State<ProfilePage> {
                             value: true,
                             onChanged: (value) {},
                             activeColor: Colors.blue,
+                          ),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.dark_mode, color: Colors.white),
+                          title: const Text(
+                            'TryOn debug',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          trailing: Switch(
+                            value: tryOnDebugMode,
+                            onChanged: (value) {
+                              setState(() {
+                                tryOnDebugMode = value;
+                              });
+                              _showMessage("$tryOnDebugMode", context);
+                            },
                           ),
                         ),
                         ListTile(
