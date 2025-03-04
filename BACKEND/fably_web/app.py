@@ -1148,16 +1148,16 @@ def password_reset():
     uid = request.args.get('uid')
 
     if not token or not uid:
-        return "Invalid request", 400
+        return render_template("reset_password/invalid_link.html"), 400
     
     if uid not in reset_tokens.keys():
-        return "token not found", 404
+        return render_template("reset_password/missing_token.html"), 404
     
     if datetime.now()> reset_tokens[uid]['expires']:
-        return "Expired Token", 400
+        return render_template("reset_password/expired_token.html"), 400
     
     if not verify_hash_value(token, reset_tokens[uid]['token']):
-        return "Invalid Token", 400
+        return render_template("reset_password/invalid_token.html"), 400
     
        
     # code to return the reset password page.
