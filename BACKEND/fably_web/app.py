@@ -578,7 +578,7 @@ def get_cart_items(user_id):
                 item_product["_id"] = str(item_product["_id"]) # convert objectid to string
                 item_product["seller_id"] = str(item_product["seller_id"]) # convert objectid to string
                 return_cart.append(item_product)
-        print("return_cart:", return_cart)
+        #print("return_cart:", return_cart)
         return jsonify(return_cart)
     
     except Exception as e:
@@ -624,7 +624,7 @@ def get_wishlist_items(user_id):
                 item_product['_id'] = str(item_product["_id"])
                 item_product["seller_id"] = str(item_product["seller_id"])
                 return_wishlist.append(item_product)
-        print("return_wishlist:", return_wishlist)
+        #print("return_wishlist:", return_wishlist)
         return jsonify(return_wishlist)
     
     except Exception as e:
