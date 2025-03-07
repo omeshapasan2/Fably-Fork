@@ -358,7 +358,6 @@ def login_customer():
             }
 
             response = make_response(jsonify(return_data))
-            #response.set_cookie('test','test_cookie', httponly=False, samesite='Lax', secure=False)
             
             return response, 200
             
@@ -1121,25 +1120,16 @@ def forgot_password():
 
             reset_url = url_for('password_reset', _external=True, token=raw_token, uid=str(customer['_id']))
             
-            '''
-            email_text = "Dear Customer,<br><br>"
-            email_text += "Given below is the url for your password reset. If you did not request this request then please ignore this email.<br>"
-            email_text += f"Please note that the password expires at {expiry.day}-{expiry.month}-{expiry.year} {expiry.strftime("%I:%M:%S %p")}<br><br>"
-            email_text += f"<a href=\"{reset_url}\" >Password Reset link</a>"
-            '''
-            
             email_text = render_template('email_templates/password_reset.html', expiry = expiry, reset_url = reset_url)
 
             mail.send_email(customer['email'], 'Reset Fably Password', email_text)
 
             return "Success!", 200
 
-            
         except Exception as e:
             print("Error:",e)
             return "An Unexpected error occured", 500
 
-        
     return "Wrong method", 500
 
 @app.route('/password_reset', methods = ['GET', 'POST'])
@@ -1321,13 +1311,6 @@ def virtual_try_on_endpoint():
         return image_secure_url
         #return f'Image and ID received successfully | id : {item_id} ', 200
     except Exception as e:
-        '''
-        cloudinary.config(
-            cloud_name=original_config['cloud_name'],
-            api_key=original_config['api_key'],
-            api_secret=original_config['api_secret']
-        )
-        '''
         import traceback
         print(traceback.format_exc())
         print('Error: ' + str(e))
@@ -1345,9 +1328,6 @@ def fetch_image_from_cloudinary(url):
     Returns:
         Image object: PIL.Image object of the fetched image.
     """
-    # Construct the Cloudinary URL
-    #cloudinary_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/{public_id}.jpg"
-    #cloudinary_url = "https://res.cloudinary.com/dldgeyki5/image/upload/v1740417525/uo4dwcd19lwekkruxfnu.jpg"
     cloudinary_url = url
 
     try:
