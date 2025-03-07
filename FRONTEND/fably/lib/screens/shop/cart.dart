@@ -10,10 +10,6 @@ import '../shop/product.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
 
-/*void main() {
-  runApp(MyApp());
-}*/
-
 ElevatedButton backButton = ElevatedButton(
     style: ElevatedButton.styleFrom(
       foregroundColor: Color.fromARGB(255, 255, 255, 255),
@@ -94,24 +90,8 @@ class _CartPageState extends State<CartPage> {
     cookies = await prefs.getPrefs('cookies') ?? '';
     String? info = await prefs.getPrefs('userInfo');
     userInfo = jsonDecode(info ?? '{}');
-    /*
-    _showMessage("test after cookies and userInfo");
-    _showMessage("Cookies: $cookies");
-    _showMessage("userInfo: $userInfo");
-    _showMessage("test after the 2 prints");*/
-    //final url = Uri.parse('http://152.53.119.239:5000/products');
-    //final url = Uri.parse('127.0.0.1:5000/get_cart/${userInfo['_id']}');
 
     try {
-      /*
-      final response = await http.get(
-        url,
-        headers: {
-          'Cookie': cookies, // Add cookies to headers
-        },
-        );
-      print('Response status: ${response.statusCode}');
-      print(response.body);*/
       final response = await requests.getRequest(
         'get_cart/${userInfo['_id']}',
         headers: {
@@ -148,27 +128,10 @@ class _CartPageState extends State<CartPage> {
     Map userInfo = {};
     cookies = await prefs.getPrefs('cookies') ?? '';
     userInfo = jsonDecode( await prefs.getPrefs('userInfo') ?? '{}');
-
-    // Step 1: Retrieve the CSRF token
-    
-    // Step 2: Prepare the login data as JSON
     final changePayload = jsonEncode({
       'item_id': id,
       'quantity': quantity,
     });
-
-    // Step 3: Send a POST request to the login endpoint with the CSRF token in headers
-    /*
-    final url = Uri.parse('http://127.0.0.1:5000/remove_from_cart/${userInfo["_id"]}/');
-    final changeResponse = await http.post(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken, // Adjust header name if needed
-        "Cookies": cookies
-      },
-      body: changePayload,
-    );*/
     final changeResponse = await requests.postRequest(
       'remove_from_cart/${userInfo["_id"]}/',
       body:
@@ -177,17 +140,12 @@ class _CartPageState extends State<CartPage> {
           'quantity': quantity,
         }
     );
-    // Step 4: Handle the login response
     if (changeResponse.statusCode == 200) {
-      // Parse the returned user info
       print(changeResponse.body);
 
-      // Extract cookies from the response headers
-      // Note: The cookie string might include additional attributes
       final String? cookies = changeResponse.headers['set-cookie'];
       print("Cookies: $cookies");
 
-      // Step 5: Save the user info and cookies using SharedPreferences
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('userInfo', jsonEncode(userInfo));
       if (cookies != null) {
