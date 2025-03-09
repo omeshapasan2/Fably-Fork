@@ -76,170 +76,291 @@ class _ProfilePageState extends State<ProfilePage> {
     return WillPopScope(
       onWillPop: () async {
         if (Platform.isAndroid) {
-        SystemNavigator.pop(); // For Android
-      } else if (Platform.isIOS) {
-        exit(0); // For iOS and other platforms
-      }
-      return false;
+          SystemNavigator.pop(); // For Android
+        } else if (Platform.isIOS) {
+          exit(0); // For iOS and other platforms
+        }
+        return false;
       },
       child: SafeArea(
-        child:Scaffold(
+        child: Scaffold(
           appBar: CommonAppBar(title: 'PROFILE'),
           drawer: CommonDrawer(),
           backgroundColor: Colors.black,
           body: SafeArea(
-            child:SingleChildScrollView(
-              child:Column(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(30),
-                        bottomRight: Radius.circular(30),
-                      ),
-                    ),
+                  const SizedBox(height: 32),
+                  // Profile image and name
+                  Center(
                     child: Column(
                       children: [
-                        const SizedBox(height: 20),
-                        // Time and battery status bar
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '9:41',
-                              style: TextStyle(
-                                color: Colors.grey[800],
-                                fontSize: 16,
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.pink.withOpacity(0.3),
+                                blurRadius: 15,
+                                spreadRadius: 5,
                               ),
-                            ),
-                            Row(
-                              children: [
-                                Icon(Icons.signal_cellular_4_bar, color: Colors.grey[800]),
-                                const SizedBox(width: 5),
-                                Icon(Icons.wifi, color: Colors.grey[800]),
-                                const SizedBox(width: 5),
-                                Icon(Icons.battery_full, color: Colors.grey[800]),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        // Profile image
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.pink[100],
-                          child: ClipOval(
-                            child: Container(
-                              width: 90,
-                              height: 90,
-                              color: Colors.pink[100],
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundColor: Colors.pink[300],
+                            child: ClipOval(
+                              child: Container(
+                                width: 110,
+                                height: 110,
+                                color: Colors.pink[300],
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        // Name
+                        const SizedBox(height: 24),
                         Text(
                           name,
-                          style: TextStyle(
-                            fontSize: 24,
+                          style: const TextStyle(
+                            fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          email,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[400],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 48),
+                  
+                  // Section header
+                  const Text(
+                    'Contact Information',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
                   // Contact information
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Column(
                       children: [
-                        ListTile(
-                          title: const Text(
-                            'Phone',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.phone, color: Colors.white70),
+                                  SizedBox(width: 16),
+                                  Text(
+                                    'Phone',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '+5999-771-7171',
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Divider(color: Colors.grey[800], height: 1),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.email, color: Colors.white70),
+                                  SizedBox(width: 16),
+                                  Text(
+                                    'Email',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                email,
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Section header
+                  const Text(
+                    'Settings',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Settings options
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.dark_mode, color: Colors.white70),
+                                  SizedBox(width: 16),
+                                  Text(
+                                    'Dark mode',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                              Switch(
+                                value: true,
+                                onChanged: (value) {},
+                                activeColor: Colors.pink[300],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Divider(color: Colors.grey[800], height: 1),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.bug_report, color: Colors.white70),
+                                  SizedBox(width: 16),
+                                  Text(
+                                    'TryOn debug',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                              Switch(
+                                value: tryOnDebugMode,
+                                onChanged: (value) {
+                                  setState(() {
+                                    tryOnDebugMode = value;
+                                  });
+                                  _showMessage("$tryOnDebugMode", context);
+                                },
+                                activeColor: Colors.pink[300],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Account options
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        InkWell(
+                          onTap: () {},
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.person_outline, color: Colors.white70),
+                                    SizedBox(width: 16),
+                                    Text(
+                                      'Profile details',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                                Icon(Icons.chevron_right, color: Colors.grey[500]),
+                              ],
                             ),
                           ),
-                          trailing: Text(
-                            '+5999-771-7171',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 16,
+                        ),
+                        Divider(color: Colors.grey[800], height: 1),
+                        InkWell(
+                          onTap: () {},
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.settings, color: Colors.white70),
+                                    SizedBox(width: 16),
+                                    Text(
+                                      'Settings',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                                Icon(Icons.chevron_right, color: Colors.grey[500]),
+                              ],
                             ),
                           ),
                         ),
-                        ListTile(
-                          title: const Text(
-                            'Mail',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                          trailing: Text(
-                            email,
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                        // Settings options
-                        ListTile(
-                          leading: const Icon(Icons.dark_mode, color: Colors.white),
-                          title: const Text(
-                            'Dark mode',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          trailing: Switch(
-                            value: true,
-                            onChanged: (value) {},
-                            activeColor: Colors.blue,
-                          ),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.dark_mode, color: Colors.white),
-                          title: const Text(
-                            'TryOn debug',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          trailing: Switch(
-                            value: tryOnDebugMode,
-                            onChanged: (value) {
-                              setState(() {
-                                tryOnDebugMode = value;
-                              });
-                              _showMessage("$tryOnDebugMode", context);
-                            },
-                          ),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.person_outline, color: Colors.white),
-                          title: const Text(
-                            'Profile details',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          trailing: const Icon(Icons.chevron_right, color: Colors.white),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.settings, color: Colors.white),
-                          title: const Text(
-                            'Settings',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          trailing: const Icon(Icons.chevron_right, color: Colors.white),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.logout, color: Colors.white),
-                          title: const Text(
-                            'Log out',
-                            style: TextStyle(color: Colors.white),
-                          ),
+                        Divider(color: Colors.grey[800], height: 1),
+                        InkWell(
                           onTap: () {
                             signOut(context).then((o) {
                               Navigator.pushReplacement(
@@ -248,11 +369,35 @@ class _ProfilePageState extends State<ProfilePage> {
                               );
                             });
                           },
-                          trailing: const Icon(Icons.chevron_right, color: Colors.white),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.logout, color: Colors.pink),
+                                    SizedBox(width: 16),
+                                    Text(
+                                      'Log out',
+                                      style: TextStyle(color: Colors.pink),
+                                    ),
+                                  ],
+                                ),
+                                Icon(Icons.chevron_right, color: Colors.pink[300]),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
+                  
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
