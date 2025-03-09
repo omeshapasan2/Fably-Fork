@@ -103,7 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.pink.withOpacity(0.3),
+                                color: const Color.fromARGB(255, 163, 158, 160).withOpacity(0.3),
                                 blurRadius: 15,
                                 spreadRadius: 5,
                               ),
@@ -111,12 +111,12 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           child: CircleAvatar(
                             radius: 60,
-                            backgroundColor: Colors.pink[300],
+                            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                             child: ClipOval(
                               child: Container(
                                 width: 110,
                                 height: 110,
-                                color: Colors.pink[300],
+                                color: const Color.fromARGB(255, 104, 102, 103),
                               ),
                             ),
                           ),
@@ -262,7 +262,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               Switch(
                                 value: true,
                                 onChanged: (value) {},
-                                activeColor: Colors.pink[300],
+                                activeColor: const Color.fromARGB(255, 10, 218, 218),
                               ),
                             ],
                           ),
@@ -291,7 +291,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   });
                                   _showMessage("$tryOnDebugMode", context);
                                 },
-                                activeColor: Colors.pink[300],
+                                activeColor: const Color.fromARGB(255, 10, 218, 218),
                               ),
                             ],
                           ),
