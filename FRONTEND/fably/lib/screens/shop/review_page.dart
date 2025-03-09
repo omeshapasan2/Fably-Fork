@@ -11,12 +11,12 @@ class ReviewPage extends StatefulWidget {
   final int ratingCount;
 
   const ReviewPage({
-    Key? key,
+    super.key,
     required this.itemName,
     required this.itemId,
     required this.sumRating,
     required this.ratingCount,
-  }) : super(key: key);
+  });
 
   @override
   State<ReviewPage> createState() => _ReviewPageState();
@@ -211,7 +211,7 @@ class _ReviewPageState extends State<ReviewPage> {
     }
   }
 
-  Widget _buildStarsNonInter(double rating, {double starSize = 20, bool interactive = false}) {
+  Widget _buildStarsNonInter(double rating, {bool interactive = false}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {

@@ -3,7 +3,6 @@ import 'package:fably/screens/home/widgets/common_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import '../../utils/prefs.dart';
 import '../home/widgets/bottom_nav_bar.dart';
 import '../home/widgets/common_drawer.dart';

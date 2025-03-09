@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 class OrderPage extends StatefulWidget {
   final String orderId;
 
-  const OrderPage({Key? key, required this.orderId}) : super(key: key);
+  const OrderPage({super.key, required this.orderId});
 
     @override
   _OrderPageState createState() => _OrderPageState();

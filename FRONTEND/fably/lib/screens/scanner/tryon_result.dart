@@ -66,7 +66,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
     }
 
     // Convert image to Base64
-    final bytes = await imageFile!.readAsBytes();
+    final bytes = await imageFile.readAsBytes();
     final base64Image = base64Encode(bytes);
     String debugMode = "$tryOnDebugMode";
     print("debugMode = $debugMode");
@@ -168,7 +168,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
                     )
                   : //resultImageBytes != null
                   image_url != ""
-                      ? Image.network(image_url!) // Display the received image
+                      ? Image.network(image_url) // Display the received image
                       : Text('No result to display.'),
         ),
       ),

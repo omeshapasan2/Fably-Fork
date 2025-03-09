@@ -10,6 +10,8 @@ import 'package:fably/utils/requests.dart';
 import 'package:flutter/material.dart';
 
 class ShoppingHistoryScreen extends StatefulWidget {
+  const ShoppingHistoryScreen({super.key});
+
   @override
   _ShoppingHistoryScreenState createState() => _ShoppingHistoryScreenState();
 }
@@ -52,7 +54,7 @@ class _ShoppingHistoryScreenState extends State<ShoppingHistoryScreen> {
   void initState() {
     super.initState();
     
-    this.orders = [];
+    orders = [];
 
     final requests = BackendRequests();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -83,14 +85,14 @@ class _ShoppingHistoryScreenState extends State<ShoppingHistoryScreen> {
         orders = jsonData.map((item) => item as Map<String, dynamic>).toList();
         //final List<Map<String, dynamic>> orders = jsonDecode(response.body);
         setState(() {
-          this.orders = orders;
+          orders = orders;
           for (int i =0; i<orders.length; i++){
             orders[i]["status"] = "Delivered";
           }
         });
         print('Orders: $orders');
       }
-      print("${response.body}");
+      print(response.body);
     } catch (e) {
       print('Error fetching orders: $e');
     }
@@ -127,7 +129,7 @@ class _ShoppingHistoryScreenState extends State<ShoppingHistoryScreen> {
           ),
           centerTitle: true, // Centers the title
         ),
-        body: isLoading ? Center(child: CircularProgressIndicator()) : this.orders.isEmpty ? Center(child: Text('No orders found')) : ListView.builder(
+        body: isLoading ? Center(child: CircularProgressIndicator()) : orders.isEmpty ? Center(child: Text('No orders found')) : ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: orders.length,
           itemBuilder: (context, index) {
