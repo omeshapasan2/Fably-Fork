@@ -1,10 +1,17 @@
+import base64
+from io import BytesIO
+from pathlib import Path
+import cloudinary
+import cloudinary.uploader
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session, abort, make_response
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from pymongo import MongoClient
+import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from bson import ObjectId
 from datetime import datetime, timedelta
+import time
 import hashlib
 import config
 from models import Seller
@@ -12,14 +19,17 @@ from werkzeug.utils import secure_filename
 import os
 from cloudinary.uploader import upload
 from cloudinary.utils import cloudinary_url
-from cloudinary.api import delete_resources_by_prefix
+from cloudinary.api import delete_resources_by_prefix, delete_resources
 from flask import Flask, jsonify
 from flask_pymongo import PyMongo
 from flask_cors import CORS
 import secrets
 import hmac
+from PIL import Image
+
 
 import send_email as mail
+import virtual_try_on
 
 reset_tokens = {}
 
@@ -113,6 +123,9 @@ def home():
 def checkout():
     """Handles checkout form submission from Flutter"""
     try:
+        if not verify_csrf(request.headers.get('X-CSRFToken')):
+            return "Unauthorised CSRF!", 400
+
         if not customer_logged_in(""):
             print("Unauthorised")
             return "Unauthorised!", 400
@@ -190,6 +203,10 @@ def checkout():
 @login_required
 def get_checkouts():
     """Retrieve all checkout records (Admin Only)"""
+
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+    
     checkouts = list(checkout_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id
     return jsonify(checkouts)
 
@@ -200,6 +217,81 @@ def get_orders():
     orders = list(orders_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id
     
     return jsonify(orders)
+
+
+### User Orders
+@app.route('/customer_orders/<user_id>/', methods=['POST'])
+def get_user_orders(user_id):
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+    
+    if not customer_logged_in(user_id):
+        return "Unauthorised!", 400
+
+    """Retrieve all orders of user"""
+    orders = list(orders_collection.find({"userId":user_id}))
+
+    for o in range(len(orders)):
+        order_total = 0
+        for i in range(len(orders[o]['items'])):
+            item = orders[o]['items'][i]
+            try:
+                item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})
+            except:
+                continue
+            order_total += item["quantity"]*item_product["price"]
+        orders[o]["total"] = order_total
+        orders[o]["_id"] = str(orders[o]["_id"])
+        orders[o]["orderDate"] = orders[o]["orderDate"].strftime("%d-%m-%Y")
+    print("orders", orders)        
+
+    return jsonify(orders), 200
+### User Orders
+
+### User Order
+@app.route('/customer_orders_items/<user_id>/', methods=['POST'])
+def get_user_order_items(user_id):
+
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+
+    if not customer_logged_in(user_id):
+        return "Unauthorised!", 400
+
+    data = request.get_json()
+    order_id = data["order_id"]
+
+    """Retrieve all items of user order"""
+    orders = list(orders_collection.find({"userId":user_id, "_id": ObjectId(order_id)}))
+
+    return_order = {}
+
+    return_order["orderDate"] = str(orders[0]["orderDate"].strftime("%d-%m-%Y"))
+    return_order["_id"] = str(orders[0]["_id"])
+    return_order['checkoutInfo'] = {}
+
+
+    return_items = []
+
+    for i in range(len(orders[0]['items'])):
+        item = orders[0]['items'][i]
+        return_item = {}
+        try:
+            item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})
+        except:
+            continue
+        return_item["quantity"] = item["quantity"]
+        return_item["_id"] = str(item_product["_id"])
+        return_item["photos"] = item_product["photos"]
+        return_item["price"] = item_product["price"]
+        return_item["name"] = item_product["name"]
+        return_items.append(return_item)
+    import json
+    return_order["items"] = return_items
+    print("return_order", json.dumps(return_order, indent = 4))
+
+    return jsonify(return_order), 200
+### User Order
 
 # ---------------- SELLER & ITEM MANAGEMENT (UNCHANGED) ----------------
 
@@ -221,7 +313,7 @@ def register():
 
 Thank you for Signing Up to Fably!
 """ '''
-            body = render_template('email_template/register_customer.html', name = request.form['name'])
+            body = render_template('email_templates/register_seller.html', name = request.form['name'])
             mail.send_email(request.form["email"], "Registration to Fably", body)
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('login'))
@@ -254,20 +346,34 @@ def login_customer():
             session["type"] = "Customer"
             session["email"] = customer["email"]
             session["user_id"] = str(customer["_id"])
+            session["csrf"] = str(request.headers.get('X-CSRFToken'))
             customer["_id"] = str(customer["_id"])
 
             return_data = {
                 '_id': str(customer['_id']),
                 'email': customer["email"],
-                'name': ''
+                'name': customer["fname"] + " " + customer["lname"],
+                'fname': customer["fname"],
+                'lname': customer["lname"]
             }
 
             response = make_response(jsonify(return_data))
-            #response.set_cookie('test','test_cookie', httponly=False, samesite='Lax', secure=False)
             
             return response, 200
             
     return "Invalid email or password!", 401
+
+@app.route('/check_logged_in')
+def checkLoggedIn():
+    if "type" in session:
+        if session["type"] == "Customer":
+            return "LoggedIn", 200
+
+    if "user_id" in session:
+        if session["user_id"] != '':
+            return "LoggedIn", 200
+
+    return "LoggedOut", 401
 
 @app.route('/register_customer', methods=['GET', 'POST'])
 def register_customer():
@@ -290,7 +396,7 @@ def register_customer():
 
 Thank you for Signing Up to Fably!
 """
-            body = render_template('email_templates/register_customer.html')
+            body = render_template('email_templates/register_customer.html', name=request.get_json()['first_name'].strip())
             mail.send_email(request.get_json()["email"].strip(), "Registration to Fably", body)
             
             return "Success!", 200
@@ -437,6 +543,9 @@ def get_products():
 @app.route('/get_cart/<user_id>/', methods=['GET'])
 def get_cart_items(user_id):
     try:
+
+        if not verify_csrf(request.headers.get('X-CSRFToken')):
+            return "Unauthorised CSRF!", 400
         
         if not customer_logged_in(user_id):
             return "Unauthorised!", 400
@@ -468,7 +577,7 @@ def get_cart_items(user_id):
                 item_product["_id"] = str(item_product["_id"]) # convert objectid to string
                 item_product["seller_id"] = str(item_product["seller_id"]) # convert objectid to string
                 return_cart.append(item_product)
-        print("return_cart:", return_cart)
+        #print("return_cart:", return_cart)
         return jsonify(return_cart)
     
     except Exception as e:
@@ -479,6 +588,8 @@ def get_cart_items(user_id):
 @app.route('/get_wishlist/<user_id>/', methods=['GET'])
 def get_wishlist_items(user_id):
     try:
+        if not verify_csrf(request.headers.get('X-CSRFToken')):
+            return "Unauthorised CSRF!", 400
         
         if not customer_logged_in(user_id):
             return "Unauthorised!", 400
@@ -512,7 +623,7 @@ def get_wishlist_items(user_id):
                 item_product['_id'] = str(item_product["_id"])
                 item_product["seller_id"] = str(item_product["seller_id"])
                 return_wishlist.append(item_product)
-        print("return_wishlist:", return_wishlist)
+        #print("return_wishlist:", return_wishlist)
         return jsonify(return_wishlist)
     
     except Exception as e:
@@ -530,6 +641,9 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -590,6 +704,9 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -638,6 +755,194 @@ TODO: add crsf token to the input
             return ("error: "+str(e)), 500
     return abort(404)
 
+@app.route('/add_review/<user_id>/', methods=['GET', 'POST'])
+def add_review(user_id):
+    '''
+accepts input: {'item_id':'1234', 'rating':5, 'review':'Good product'}
+TODO: add crsf token to the input
+'''
+    if request.method=='POST':
+        try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
+            if not customer_logged_in(user_id):
+                return "Unauthorised!", 400
+            
+            # Fetch the user
+            print("Fetch the user wishlist")
+            user = customers_collection.find_one({'_id': ObjectId(user_id)})
+
+            #check if user exists
+            if not user:
+                return "Error: User not found", 404
+
+            item_id = request.get_json()["item_id"]
+            rating = request.get_json()["rating"]
+            review = request.get_json()["review"]
+
+
+            try:
+                item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+                if not item:
+                    return "Error: Item not found", 404
+            except:
+                return "Error: Item not found", 404
+            
+            if "reviews" not in item.keys():
+                item["reviews"] = {}
+                item["review_count"] = 0
+                item["rating_sum"] = 0
+
+            reviews = item["reviews"]
+            
+            reviews[user_id] = {
+                "user_id": user_id,
+                "rating": rating,
+                "review": review
+            }
+
+            item['review_count'] = len(reviews)
+            item['rating_sum'] = item['rating_sum'] = sum([reviews[r]["rating"] for r in reviews.keys()])
+
+            items_collection.update_one(
+                {'_id': ObjectId(item_id)},
+                {'$set': {'reviews': reviews, 'review_count': item['review_count'], 'rating_sum': item['rating_sum']}}
+            )
+            
+            return "Success!", 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
+@app.route('/get_reviews/', methods=['GET', 'POST'])
+def get_reviews():
+    '''
+accepts input: {'item_id':'1234', 'rating':5, 'review':'Good product'}
+TODO: add crsf token to the input
+'''
+    if request.method=='POST':
+        try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
+            if not customer_logged_in(''):
+                return "Unauthorised!", 400
+            
+            item_id = request.get_json()["item_id"]
+
+            try:
+                item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+                if not item:
+                    return "Error: Item not found", 404
+            except:
+                return "Error: Item not found", 404
+            
+            if "reviews" not in item.keys():
+                item["reviews"] = {}
+                item["review_count"] = 0
+                item["rating_sum"] = 0
+
+            reviews = item["reviews"]
+
+            return_reviews = {}
+            
+            for i in reviews.keys():
+                try:
+                    user = customers_collection.find_one({'_id': ObjectId(reviews[i]["user_id"])})
+
+                    if not user:
+                        reviews.pop(i)
+                        item['review_count'] -= 1
+                        item['rating_sum'] -= reviews[i]["rating"]
+                        continue
+                except:
+                    return "Error: User not found", 404
+                return_reviews[i] = {}
+                return_reviews[i]["user_id"] = str(reviews[i]["user_id"])
+                return_reviews[i]["rating"] = reviews[i]["rating"]
+                return_reviews[i]["review"] = reviews[i]["review"]
+                return_reviews[i]["user_name"] = user["fname"] + " " + user["lname"]
+
+            item['review_count'] = len(return_reviews)
+            item['rating_sum'] = sum([return_reviews[r]["rating"] for r in return_reviews.keys()])
+
+            items_collection.update_one(
+                {'_id': ObjectId(item_id)},
+                {'$set': {'reviews': reviews, 'review_count': item['review_count'], 'rating_sum': item['rating_sum']}}
+            )
+            
+            return jsonify(return_reviews), 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
+@app.route('/get_review_average/', methods=['GET', 'POST'])
+def get_review_average():
+    '''
+accepts input: {'item_id':'1234', 'rating':5, 'review':'Good product'}
+TODO: add crsf token to the input
+'''
+    if request.method=='POST':
+        try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
+            if not customer_logged_in(''):
+                return "Unauthorised!", 400
+            
+            item_id = request.get_json()["item_id"]
+
+            try:
+                item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+                if not item:
+                    return "Error: Item not found", 404
+            except:
+                return "Error: Item not found", 404
+            
+            if "reviews" not in item.keys():
+                item["reviews"] = {}
+                item["review_count"] = 0
+                item["rating_sum"] = 0
+
+            reviews = item["reviews"]
+            
+            for i in reviews.keys():
+                try:
+                    user = customers_collection.find_one({'_id': ObjectId(reviews[i]["user_id"])})
+
+                    if not user:
+                        reviews.pop(i)
+                        item['review_count'] -= 1
+                        item['rating_sum'] -= reviews[i]["rating"]
+                except Exception as e:
+                    import traceback
+                    print(traceback.format_exc())
+                    return f"Error: {e}", 404
+                
+
+            items_collection.update_one(
+                {'_id': ObjectId(item_id)},
+                {'$set': {'reviews': reviews, 'review_count': item['review_count'], 'rating_sum': item['rating_sum']}}
+            )
+            
+            return jsonify({"review_count":item["review_count"], "rating_sum":item["rating_sum"]}), 200
+        
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return ("error: "+str(e)), 500
+    return abort(404)
+
 
 @app.route('/remove_from_cart/<user_id>/', methods=['GET', 'POST'])
 def remove_cart_item(user_id):
@@ -647,6 +952,9 @@ TODO: add crsf token to the input
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -694,6 +1002,9 @@ accepts input: {'item_id':'1234', 'quantity':1}
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -739,6 +1050,9 @@ accepts input: {'item_id':'1234', 'quantity':1}
 '''
     if request.method=='POST':
         try:
+            if not verify_csrf(request.headers.get('X-CSRFToken')):
+                return "Unauthorised CSRF!", 400
+
             if not customer_logged_in(user_id):
                 return "Unauthorised!", 400
             
@@ -806,25 +1120,16 @@ def forgot_password():
 
             reset_url = url_for('password_reset', _external=True, token=raw_token, uid=str(customer['_id']))
             
-            '''
-            email_text = "Dear Customer,<br><br>"
-            email_text += "Given below is the url for your password reset. If you did not request this request then please ignore this email.<br>"
-            email_text += f"Please note that the password expires at {expiry.day}-{expiry.month}-{expiry.year} {expiry.strftime("%I:%M:%S %p")}<br><br>"
-            email_text += f"<a href=\"{reset_url}\" >Password Reset link</a>"
-            '''
-            
             email_text = render_template('email_templates/password_reset.html', expiry = expiry, reset_url = reset_url)
 
             mail.send_email(customer['email'], 'Reset Fably Password', email_text)
 
             return "Success!", 200
 
-            
         except Exception as e:
             print("Error:",e)
             return "An Unexpected error occured", 500
 
-        
     return "Wrong method", 500
 
 @app.route('/password_reset', methods = ['GET', 'POST'])
@@ -833,16 +1138,16 @@ def password_reset():
     uid = request.args.get('uid')
 
     if not token or not uid:
-        return "Invalid request", 400
+        return render_template("reset_password/invalid_link.html"), 400
     
     if uid not in reset_tokens.keys():
-        return "token not found", 404
+        return render_template("reset_password/missing_token.html"), 404
     
     if datetime.now()> reset_tokens[uid]['expires']:
-        return "Expired Token", 400
+        return render_template("reset_password/expired_token.html"), 400
     
     if not verify_hash_value(token, reset_tokens[uid]['token']):
-        return "Invalid Token", 400
+        return render_template("reset_password/invalid_token.html"), 400
     
        
     # code to return the reset password page.
@@ -860,11 +1165,217 @@ def password_reset():
         uid = request.args.get('uid')  # Extract UID from the query parameter
         customers_collection.update_one({'_id': ObjectId(uid)}, {'$set': {'password': hashed_password}})
 
-        
-        
-        return "Password successfully reset!"
+        return render_template("password_reset_success.html"), 200
     
     return render_template("reset_password.html"), 200
+
+@app.route('/virtual_try_on', methods = ['POST'])
+def virtual_try_on_endpoint():
+    # Save the original configuration
+    
+    cloudinary.config(
+        cloud_name=config.CLOUDINARY_CLOUD_NAME,
+        api_key=config.CLOUDINARY_API_KEY,
+        api_secret=config.CLOUDINARY_API_SECRET
+    )
+
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+
+    if not customer_logged_in(""):
+        return "Unauthorised!", 400
+    
+    try:
+        # Get the ID from the form data
+        item_id = request.get_json()['item_id']
+        if not item_id:
+            return 'Item ID is required', 400
+
+        # Get the Base64-encoded image
+        image_data = request.get_json()['image']
+        if not image_data:
+            return 'Error: Image file is required', 400
+        
+        # Decode the Base64 image
+        try:
+            image = Image.open(BytesIO(base64.b64decode(image_data)))
+        except Exception as e:
+            return 'Invalid image data', 400
+        
+        root_folder = f"try_ons/{session['user_id']}"
+
+        folder_path = Path(root_folder+"/inputs")
+
+        if not folder_path.exists():
+            folder_path.mkdir(parents=True, exist_ok=True)
+            print(f"Folder created: {folder_path}")
+        else:
+            print(f"Folder already exists: {folder_path}")
+
+        folder_path = Path(root_folder+"/outputs")
+
+        if not folder_path.exists():
+            folder_path.mkdir(parents=True, exist_ok=True)
+            print(f"Folder created: {folder_path}")
+        else:
+            print(f"Folder already exists: {folder_path}")
+
+        # Save the image file (optional)
+        image.save(f'{root_folder}/inputs/person.png')
+        # fetched person image and added to the inputs folder
+
+        item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+        image2 = fetch_image_from_cloudinary(item['photos'][0])
+
+        image2.save(f'{root_folder}/inputs/cloth.png')
+        #||| added image of the cloth to the inputs folder
+
+        # virtual try on processing starts here
+
+        # temporary code to copy the person image to the outputs folder
+        debug = False
+        if 'debug' in request.get_json():
+            if request.get_json()['debug'].lower() == 'true':
+                print("Debug mode")
+                debug = True
+
+        if debug:
+            image.save(f'{root_folder}/outputs/output.png')
+
+        else:
+
+            result_text = virtual_try_on.tryOn(root_folder)
+
+            if result_text != "Success":
+                import traceback
+                print(traceback.format_exc())
+                return result_text, 500
+
+            try:
+                with Image.open(f'{root_folder}/outputs/output_image.webp') as img:
+                    img.save(f'{root_folder}/outputs/output.png', format="PNG")
+                print(f"Image successfully converted to {f'{root_folder}/outputs/output.png'}")
+                os.remove(f'{root_folder}/outputs/output_image.webp')
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                print(f"An error occurred while converting webP to PNG: {e}")
+                return f"An error occurred while converting webP to PNG: {e}", 500
+
+        #||| virtual try on processing ends here with the output image saved in the outputs folder
+
+        user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+
+        if "virtualTryOns" not in user.keys():
+            user["virtualTryOns"] = {}
+        
+        if item_id in user["virtualTryOns"].keys():
+            try:
+                delete_cloudinary_image(user["virtualTryOns"][item_id])
+            except Exception as e:
+                print(e)
+            user["virtualTryOns"][item_id] = {}
+            print("Deleted previous image")
+        user["virtualTryOns"][item_id] = {}
+        
+        user["virtualTryOns"][item_id]["publicId"] = upload_image_to_cloudinary(f"{root_folder}/outputs/output.png")
+        image_secure_url = generate_secure_cloudinary_url(user["virtualTryOns"][item_id]["publicId"])
+        print("URL:",image_secure_url)
+        print("Uploaded new image:", user["virtualTryOns"][item_id]["publicId"])
+
+        customers_collection.update_one(
+            {'_id': ObjectId(session["user_id"])},  # Query to find the user
+            {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
+        )
+        try:
+            os.remove(f'{root_folder}/inputs/cloth.png')
+        except Exception as e:
+            print(e)
+        try:
+            os.remove(f'{root_folder}/inputs/person.png')
+        except Exception as e:
+            print(e)
+        try:
+            os.remove(f'{root_folder}/outputs/output.png')
+        except Exception as e:
+            print(e)
+        try:
+            os.remove(f'{root_folder}/outputs/blank_white_output.png')
+        except Exception as e:
+            print(e)
+
+        #||| uploaded the image to cloudinary
+        
+
+        return image_secure_url
+        #return f'Image and ID received successfully | id : {item_id} ', 200
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        print('Error: ' + str(e))
+        return 'Error: ' + str(e), 500
+
+
+def fetch_image_from_cloudinary(url):
+    """
+    Fetches an image from Cloudinary using its public ID.
+
+    Args:
+        public_id (str): The public ID of the image in Cloudinary.
+        cloud_name (str): The name of your Cloudinary account.
+
+    Returns:
+        Image object: PIL.Image object of the fetched image.
+    """
+    cloudinary_url = url
+
+    try:
+        # Make the GET request to Cloudinary
+        response = requests.get(cloudinary_url)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+
+        # Load the image into a PIL Image object
+        image = Image.open(BytesIO(response.content))
+        return image
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching the image: {e}")
+        return None
+
+def generate_secure_cloudinary_url(public_id):
+    expiration = int(time.time()) + 3600  # URL valid for 1 hour
+    url, _ = cloudinary_url(
+        public_id,
+        type='authenticated',  # For authenticated resources
+        sign_url=True,
+        expires_at=expiration  # Optional: Expiration timestamp
+    )
+    return url
+
+def delete_cloudinary_image(tryOnData):
+    #url = tryOnData['url']
+    public_id = tryOnData['publicId']
+    #public_id = url.split("/")[-1].split(".")[0]  # Extract public ID
+    #delete_resources_by_prefix(public_id)
+    response = cloudinary.uploader.destroy(public_id, type="authenticated")  # Delete the exact resource
+    print(f"Deleted image with public ID: {public_id}, Response: {response}")
+
+def upload_image_to_cloudinary(image_path):
+    """
+    Uploads an image to Cloudinary.
+    """
+    try:
+        # Open the image file in binary mode
+        with open(image_path, "rb") as image_file:
+            # Upload the image to Cloudinary
+            upload_result = upload(image_file, type='authenticated')
+        
+        # Return the secure URL of the uploaded image
+        return upload_result['public_id']
+    except Exception as e:
+        print(f"Error uploading image to Cloudinary: {e}")
+        return None
 
 def verify_hash_value(raw_value, hashed_value):
     hashed_user_token = hashlib.sha256(raw_value.encode()).hexdigest()
@@ -872,6 +1383,11 @@ def verify_hash_value(raw_value, hashed_value):
         return True
     else:
         return False
+
+def verify_csrf(csrf):
+    if csrf == session["csrf"]:
+        return True
+    return False
 
 def customer_logged_in(user_id):
     if user_id=="":
