@@ -312,6 +312,11 @@ def create_payment():
             currency="usd",
             payment_method_types=["card"],
         )
+        return jsonify({"clientSecret": intent.client_secret})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # ---------------- SELLER & ITEM MANAGEMENT (UNCHANGED) ----------------
 
