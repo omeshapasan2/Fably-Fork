@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'success_page.dart';
 
 
 /*void main() {
@@ -64,6 +65,11 @@ class _CheckoutFormState extends State<CheckoutForm> {
             const SnackBar(content: Text("✅ Checkout successful!")),
           );
           _clearForm();
+          
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const SuccessPage()),
+          ); 
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("❌ Failed: ${response.body}")),
