@@ -1,8 +1,6 @@
 import base64
 from io import BytesIO
 from pathlib import Path
-
-import stripe
 import cloudinary
 import cloudinary.uploader
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session, abort, make_response
@@ -43,8 +41,6 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True, origins="*")
 
 app.secret_key = 'f46a1ac2564717c33df1b0dcd5f2b336'
-stripe.api_key = "sk_test_51QxRgVG8IzWoJC0qhizvf6sBgpfEErQexvGlhomL0tRoM18uQymCwi4SweGupBhHijqkFSjfAqes9vJW3s70PPKj00jqzDNXtl"
-
 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
@@ -296,27 +292,6 @@ def get_user_order_items(user_id):
 
     return jsonify(return_order), 200
 ### User Order
-
-app.route("/create-payment-intent", methods=["POST"])
-def create_payment():
-    try:
-        data = request.json
-        amount = data.get("amount")  # Amount in cents (e.g., 1000 for $10.00)
-
-        if not amount:
-            return jsonify({"error": "Amount is required"}), 400
-
-        # Create a PaymentIntent with Stripe
-        intent = stripe.PaymentIntent.create(
-            amount=amount,
-            currency="usd",
-            payment_method_types=["card"],
-        )
-        return jsonify({"clientSecret": intent.client_secret})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 
 # ---------------- SELLER & ITEM MANAGEMENT (UNCHANGED) ----------------
 

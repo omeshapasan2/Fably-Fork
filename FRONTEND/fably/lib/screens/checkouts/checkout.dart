@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'success_page.dart';
-
 
 /*void main() {
   runApp(const MyApp());
@@ -37,7 +35,6 @@ class _CheckoutFormState extends State<CheckoutForm> {
   final TextEditingController _postalCodeController = TextEditingController();
 
   final String apiUrl = "http://10.0.2.2:5000/submit-checkout-form"; // Use 10.0.2.2 for Emulator
-  
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
@@ -65,11 +62,6 @@ class _CheckoutFormState extends State<CheckoutForm> {
             const SnackBar(content: Text("✅ Checkout successful!")),
           );
           _clearForm();
-          
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const SuccessPage()),
-          ); 
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("❌ Failed: ${response.body}")),
