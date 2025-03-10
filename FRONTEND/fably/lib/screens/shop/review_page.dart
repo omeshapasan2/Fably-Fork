@@ -211,7 +211,7 @@ class _ReviewPageState extends State<ReviewPage> {
     }
   }
 
-  Widget _buildStarsNonInter(double rating, {bool interactive = false}) {
+  Widget _buildStarsNonInter(double rating) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {

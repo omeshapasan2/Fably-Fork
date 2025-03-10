@@ -1,13 +1,8 @@
-import 'package:fably/screens/shop/review_page.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert'; // For JSON decoding, if needed
-import 'dart:async';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-// Import for AreYouScreen
-import '../scanner/add_images.dart';
 import '../../utils/requests.dart';
 import '../../utils/prefs.dart';
-
 import 'cart.dart';
 import '../auth/login.dart';
 
@@ -34,7 +29,7 @@ class Product {
     return Product(
       id: json['_id'] ?? '',
       name: json['name'] ?? 'Unknown',
-      price: json['price'] ?? 0.0,
+      price: double.tryParse(json['price'].toString()) ?? 0.0,
       images: List<String>.from(json['photos'] ?? []),
       category: json['category'] ?? 'No category',
       stockQuantity: json['stockQuantity'] ?? 0,
@@ -59,236 +54,140 @@ class _ProductPageState extends State<ProductPage> {
   int _currentPage = 0;
   bool _isWishlisted = false;
   bool _isLoading = true;
-  double _averageRating = 0.0;
-  int reviewCount = 0;
-  int sumRating = 0;
 
-  Future<String?> getPrefs(pref) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? value = prefs.getString(pref);
-    return value;
-  }
-
-  bool checkLoggedIn(context){
-    if (getPrefs('userInfo') == Null || getPrefs('cookies') == Null){
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => LoginScreen(),
-        ),
-      );
+  Future<bool> checkLoggedIn(BuildContext context) async {
+    final prefs = Prefs();
+    String? cookies = await prefs.getPrefs('cookies');
+    String? userInfo = await prefs.getPrefs('userInfo');
+    
+    if (cookies == null || userInfo == null) {
+      // Not logged in, navigate to login
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+      }
       return false;
     }
     return true;
   }
 
   void _showMessage(String message) {
-    print(message);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message))
+      );
+    }
   }
 
-  Future<void> getReviewAverage() async {
-    final request = BackendRequests();
-    print("getReviewAverage");
-    
-    final response = await request.postRequest(
-      'get_review_average/',
-      body: {
-        'item_id': widget.product.id,
-      }
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      setState(() {
-        reviewCount = data['review_count'];
-        sumRating = data['rating_sum'];
-        if (reviewCount == 0){
-          _averageRating = 0.0;
+  Future<void> _checkWishlisted() async {
+    try {
+      final prefs = Prefs();
+      String? userInfo = await prefs.getPrefs('userInfo');
+      
+      if (userInfo != null) {
+        Map userData = jsonDecode(userInfo);
+        final requests = BackendRequests();
+        
+        final response = await requests.postRequest(
+          'in_wishlist/${userData['_id']}/',
+          body: {'item_id': widget.product.id}
+        );
+        
+        if (response.statusCode == 200) {
+          if (mounted) {
+            setState(() {
+              _isWishlisted = response.body == "true";
+              _isLoading = false;
+            });
+          }
         } else {
-          _averageRating = data['rating_sum'] / data['review_count'];
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
         }
-      });
-    } else {
-      print("Failed to get review average: ${response.statusCode}");
-      print("Response: ${response.body}");
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error checking wishlist: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  Future<bool> addToCart(String id, int quantity) async {
-    final requests = BackendRequests();
-    final prefs = Prefs();
+  Future<bool> _toggleWishlist() async {
+    if (!await checkLoggedIn(context)) return false;
 
-    String cookies = '';
-    Map userInfo = {};
-    cookies = await prefs.getPrefs('cookies') ?? '';
-    String? info = await prefs.getPrefs('userInfo');
-    userInfo = jsonDecode( info ?? '{}');
-
-    final changeResponse = await requests.postRequest(
-      'add_to_cart/${userInfo['_id']}/',
-      body:{
-        'item_id': id,
-        'quantity': quantity,
-      }
-      );
-    // Step 4: Handle the login response
-    if (changeResponse.statusCode == 200) {
-      // Parse the returned user info
-      print(changeResponse.body);
-
-      // Extract cookies from the response headers
-      // Note: The cookie string might include additional attributes
-      final String? cookies = changeResponse.headers['set-cookie'];
-      print("Cookies: $cookies");
-
-      // Step 5: Save the user info and cookies using SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userInfo', jsonEncode(userInfo));
-      if (cookies != null) {
-        await prefs.setString('cookies', cookies);
-      }
-
-      print("Added Item Successfully");
-      return true;
-    } else {
-      print("Failed to add item: ${changeResponse.statusCode}");
-      print("Response: ${changeResponse.body}");
-    }
-    return false;
-  }
-
-  Future<bool> addToWishlist(String id) async {
-    final requests = BackendRequests();
-    final prefs = Prefs();
-
-    String cookies = '';
-    Map userInfo = {};
-    cookies = await prefs.getPrefs('cookies') ?? '';
-    String? info = await prefs.getPrefs('userInfo');
-    userInfo = jsonDecode( info ?? '{}');
-    
-    final changeResponse = await requests.postRequest(
-      'add_to_wishlist/${userInfo['_id']}/',
-      body:{
-        'item_id': id,
-      }
-      );
-    // Step 4: Handle the login response
-    if (changeResponse.statusCode == 200) {
-      // Parse the returned user info
-      print(changeResponse.body);
-
-      // Extract cookies from the response headers
-      // Note: The cookie string might include additional attributes
-      final String? cookies = changeResponse.headers['set-cookie'];
-      print("Cookies: $cookies");
-
-      // Step 5: Save the user info and cookies using SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userInfo', jsonEncode(userInfo));
-      if (cookies != null) {
-        await prefs.setString('cookies', cookies);
-      }
-
-      print("Added Item Successfully");
-      if (changeResponse.body != "Success!"){
+    try {
+      final prefs = Prefs();
+      String? userInfo = await prefs.getPrefs('userInfo');
+      
+      if (userInfo == null) {
         return false;
       }
-      return true;
-    } else {
-      print("Failed to add item: ${changeResponse.statusCode}");
-      print("Response: ${changeResponse.body}");
-    }
-    return false;
-  }
-
-  Future<bool> removeFromWishlist(String id) async {
-    final requests = BackendRequests();
-    final prefs = Prefs();
-    String cookies = '';
-    Map userInfo = {};
-    cookies = await prefs.getPrefs('cookies') ?? '';
-    userInfo = jsonDecode( await prefs.getPrefs('userInfo') ?? '{}');
-
-    final changeResponse = await requests.postRequest(
-      'remove_from_wishlist/${userInfo["_id"]}/',
-      body:
-        {
-          'item_id': id,
-        }
-    );
-    // Step 4: Handle the login response
-    if (changeResponse.statusCode == 200) {
-      // Parse the returned user info
-      print(changeResponse.body);
-
-      // Extract cookies from the response headers
-      // Note: The cookie string might include additional attributes
-      final String? cookies = changeResponse.headers['set-cookie'];
-      print("Cookies: $cookies");
-
-      // Step 5: Save the user info and cookies using SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userInfo', jsonEncode(userInfo));
-      if (cookies != null) {
-        await prefs.setString('cookies', cookies);
-      }
-
-      print("Removed Item Successfully");
-      return true;
-    } else {
-      print("Failed to remove item: ${changeResponse.statusCode}");
-      print("Response: ${changeResponse.body}");
-    }
-    return false;
-  }
-
-  Future<bool> inWishlist(String id) async {
-    final requests = BackendRequests();
-    final prefs = Prefs();
-
-    String cookies = '';
-    Map userInfo = {};
-    cookies = await prefs.getPrefs('cookies') ?? '';
-    String? info = await prefs.getPrefs('userInfo');
-    userInfo = jsonDecode( info ?? '{}');
-    
-    final changeResponse = await requests.postRequest(
-      'in_wishlist/${userInfo['_id']}/',
-      body:{
-        'item_id': id,
-      }
+      
+      Map userData = jsonDecode(userInfo);
+      final requests = BackendRequests();
+      
+      final response = await requests.postRequest(
+        _isWishlisted 
+          ? 'remove_from_wishlist/${userData['_id']}/' 
+          : 'add_to_wishlist/${userData['_id']}/',
+        body: {'item_id': widget.product.id}
       );
-    // Step 4: Handle the login response
-    if (changeResponse.statusCode == 200) {
-      // Parse the returned user info
-      print(changeResponse.body);
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error toggling wishlist: $e");
+      return false;
+    }
+  }
 
-      // Extract cookies from the response headers
-      // Note: The cookie string might include additional attributes
-      final String? cookies = changeResponse.headers['set-cookie'];
-      print("Cookies: $cookies");
+  Future<bool> _addToCart() async {
+    if (!await checkLoggedIn(context)) return false;
 
-      // Step 5: Save the user info and cookies using SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userInfo', jsonEncode(userInfo));
-      if (cookies != null) {
-        await prefs.setString('cookies', cookies);
+    try {
+      final prefs = Prefs();
+      String? userInfo = await prefs.getPrefs('userInfo');
+      
+      if (userInfo == null) {
+        return false;
       }
-
-      //print("Added Item Successfully");
-      if (changeResponse.body == "true"){
+      
+      Map userData = jsonDecode(userInfo);
+      final requests = BackendRequests();
+      
+      final response = await requests.postRequest(
+        'add_to_cart/${userData['_id']}/',
+        body: {
+          'item_id': widget.product.id,
+          'quantity': _quantity,
+        }
+      );
+      
+      if (response.statusCode == 200) {
+        _showMessage("Added to cart successfully");
         return true;
-      } else if (changeResponse.body == "false"){
+      } else {
+        _showMessage("Failed to add to cart");
         return false;
       }
-      return true;
-    } else {
-      print("Failed to get status: ${changeResponse.statusCode}");
-      print("Response: ${changeResponse.body}");
+    } catch (e) {
+      print("Error adding to cart: $e");
+      _showMessage("Error adding to cart");
+      return false;
     }
-    return false;
   }
 
   void _incrementQuantity() {
@@ -304,421 +203,349 @@ class _ProductPageState extends State<ProductPage> {
       }
     });
   }
+  
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkWishlisted();
+    });
+  }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await getReviewAverage();
-      inWishlist(widget.product.id).then((x){
-        setState((){
-          _isWishlisted = x;
-          _isLoading = false;
-          //_averageRating = 3.3;
-        });
-      });
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: _isLoading ? Center(child: CircularProgressIndicator()) : SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
+      backgroundColor: Colors.grey[200],
+      body: SafeArea(
+        child: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+          children: [
+            // Header area with product image, back button, size selection
+            Expanded(
+              flex: 5,
+              child: Stack(
+                children: [
+                  // Product image
+                  PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
+                    },
+                    itemCount: widget.product.images.isEmpty ? 1 : widget.product.images.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        color: Colors.white,
+                        child: Image.network(
+                          widget.product.images.isEmpty 
+                              ? 'https://via.placeholder.com/400'
+                              : widget.product.images[index],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey[400]),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                  
+                  // Top bar with brand name and cart
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back,
-                                color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
-                          ),
                           const Text(
-                            "FABLY",
+                            "Fably",
                             style: TextStyle(
-                              fontFamily: "jura",
-                              letterSpacing: 3,
-                              fontSize: 24,
+                              fontSize: 32,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
                             ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.shopping_bag_outlined, size: 28),
+                            onPressed: () async {
+                              if (await checkLoggedIn(context)) {
+                                Navigator.push(
+                                  context, 
+                                  MaterialPageRoute(builder: (context) => const CartPage())
+                                );
+                              }
+                            },
                           ),
                         ],
                       ),
                     ),
-                    Stack(
-                      alignment: Alignment.bottomCenter,
+                  ),
+                  
+                  // Back button
+                  Positioned(
+                    top: 60,
+                    left: 16,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  
+                  // Size selector
+                  Positioned(
+                    right: 16,
+                    top: 100,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        SizedBox(
-                          height: 300,
-                          child: PageView.builder(
-                            controller: _pageController,
-                            onPageChanged: (index) {
-                              setState(() {
-                                _currentPage = index;
-                              });
-                            },
-                            itemCount: widget.product.images.isEmpty
-                                ? 1
-                                : widget.product.images.length,
-                            itemBuilder: (context, index) {
-                              return Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Image.network(
-                                    widget.product.images.isEmpty
-                                        ? 'https://via.placeholder.com/250'
-                                        : widget.product.images[index],
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              );
-                            },
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            "Size",
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
-                        if (widget.product.images.length > 1)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(
-                                widget.product.images.length,
-                                (index) => Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(horizontal: 4),
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: _currentPage == index
-                                        ? Colors.white
-                                        : Colors.white.withOpacity(0.4),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                        const SizedBox(height: 8),
+                        _buildSizeButton("S", "S"),
+                        const SizedBox(height: 8),
+                        _buildSizeButton("M", "M"),
+                        const SizedBox(height: 8),
+                        _buildSizeButton("L", "L"),
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Size",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: ["S", "M", "L"].map((size) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _selectedSize = size;
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _selectedSize == size
-                                  ? Colors.white
-                                  : Colors.grey[900],
-                              foregroundColor: _selectedSize == size
-                                  ? Colors.black
-                                  : Colors.white,
-                            ),
-                            child: Text(size),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+            ),
+            
+            // Details area with product info, price, buttons
+            Expanded(
+              flex: 4,
+              child: Container(
+                color: Colors.black,
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Product name
                     Text(
                       widget.product.name,
                       style: const TextStyle(
-                        fontSize: 22,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.product.description,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => 
-                            ReviewPage(
-                              itemName: widget.product.name,
-                              itemId: widget.product.id,
-                              sumRating: sumRating,
-                              ratingCount: reviewCount,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          width: double.infinity, // Set width to the full page width
-                          height: 50,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween, // Arrange items at ends
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // "Average Rating" on the left
-                              Text(
-                                "Ratings ($reviewCount)",
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-
-                              // Dynamic star rating on the right
-                              Row(
-                                children: [
-                                  // Stars
-                                  Row(
-                                    children: List.generate(5, (index) {
-                                      double rating = _averageRating;
-                                      if (_averageRating==0.0){
-                                        print("No reviews yet $_averageRating $index $rating");
-                                        return const Icon(Icons.star_border, color: Colors.grey);
-                                      }
-                                      if (_averageRating % 1 >= 0.1){
-                                        if (index < rating-1) {
-                                          // Full stars
-                                          return const Icon(Icons.star, color: Colors.amber);
-                                        } else if (index == rating ~/ 1) {
-                                          // Half star
-                                          return const Icon(Icons.star_half, color: Colors.amber);
-                                        } else {
-                                          // Empty stars (not applicable here, but for future cases)
-                                          return const Icon(Icons.star_border, color: Colors.grey);
-                                        }
-                                      } else{
-                                        if (index < rating) {
-                                          return const Icon(Icons.star, color: Colors.amber);
-                                        } else{
-                                          return const Icon(Icons.star_border, color: Colors.grey);
-                                        }
-                                      }
-                                    }),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  // Numerical rating
-                                  Text(
-                                    "$_averageRating", // Replace with dynamic value
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                    const SizedBox(height: 12),
+                    
+                    // Product description
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Text(
+                          widget.product.description,
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 16,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 16),
+                    
+                    // Price and Wishlist
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Price: \$${widget.product.price}",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            _isWishlisted ? Icons.favorite : Icons.favorite_border,
-                            color: _isWishlisted ? Colors.redAccent :Colors.white,
-                          ),
-                          onPressed: () {
-                            if (!_isWishlisted){
-                              setState((){
-                                _isWishlisted = true;
-                              });
-                              addToWishlist(widget.product.id).then((x){
-                                setState((){
-                                  _isWishlisted = true;
-                                });
-                              });
-
-                            } else{
-                              setState((){
-                                _isWishlisted = false;
-                              });
-                              removeFromWishlist(widget.product.id).then((x){
-                                setState((){
-                                  _isWishlisted = false;
-                                });
-                              });
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Quantity: $_quantity",
-                          style: const TextStyle(color: Colors.white),
+                        Row(
+                          children: [
+                            const Text(
+                              "Price",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Text(
+                              "\$${widget.product.price.toStringAsFixed(0)}",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                         Row(
                           children: [
                             IconButton(
-                              icon:
-                                  const Icon(Icons.remove, color: Colors.white),
-                              onPressed: _decrementQuantity,
+                              icon: Icon(
+                                _isWishlisted ? Icons.favorite : Icons.favorite_border,
+                                color: _isWishlisted ? Colors.red : Colors.white,
+                                size: 28,
+                              ),
+                              onPressed: () async {
+                                bool success = await _toggleWishlist();
+                                if (success) {
+                                  setState(() {
+                                    _isWishlisted = !_isWishlisted;
+                                  });
+                                }
+                              },
                             ),
-                            Text(
-                              _quantity.toString(),
-                              style: const TextStyle(
+                            const Text(
+                              "Favorites",
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                               ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add, color: Colors.white),
-                              onPressed: _incrementQuantity,
                             ),
                           ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Quantity selector (added)
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) => UploadImagesPage(productId: widget.product.id),
-                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                    return child; // No animation, just return the new page
-                                  },
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text("Virtual Try-On"),
+                        const Text(
+                          "Quantity:",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // Implement add to cart
-                              if (checkLoggedIn(context)){
-                                addToCart(widget.product.id, _quantity).then((success){
-                                  if (success){
-                                    _showMessage("$_quantity items added to cart");
-                                  } else{
-                                    _showMessage("Failed to add items to cart. Please try again.");
-                                  }
-                                });
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(255, 147, 147, 147),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text("Add to Cart"),
+                        const SizedBox(width: 16),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
+                          onPressed: _decrementQuantity,
+                        ),
+                        Text(
+                          "$_quantity",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+                          onPressed: _incrementQuantity,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Buy Now button
                     SizedBox(
                       width: double.infinity,
+                      height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // Implement buy now
-                          if (checkLoggedIn(context)){
-                            addToCart(widget.product.id, _quantity).then((value) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CartPage(),
-                                  //builder: (context) => ProductPage(product: myProduct),
-                                ),
-                              );
-                            });
-                            
-                          }
-                        },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.grey[800],
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(25),
                           ),
                         ),
+                        onPressed: () async {
+                          bool success = await _addToCart();
+                          if (success) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const CartPage()),
+                            );
+                          }
+                        },
                         child: const Text(
                           "Buy Now",
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
+            
+            // Bottom navigation
+            Container(
+              height: 60,
+              color: Colors.black,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.home_outlined, color: Colors.white, size: 28),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.favorite_border, color: Colors.white, size: 28),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.grid_view, color: Colors.white, size: 28),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.person_outline, color: Colors.white, size: 28),
+                    onPressed: () {},
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildSizeButton(String size, String label) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedSize = size;
+        });
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: _selectedSize == size ? Colors.black : Colors.white,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.black, width: 1),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: _selectedSize == size ? Colors.white : Colors.black,
+            ),
           ),
         ),
       ),
