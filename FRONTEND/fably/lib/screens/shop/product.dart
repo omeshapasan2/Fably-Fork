@@ -48,7 +48,6 @@ class ProductPage extends StatefulWidget {
 }
 
 class _ProductPageState extends State<ProductPage> {
-  int _quantity = 1;
   String _selectedSize = "M";
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -172,7 +171,7 @@ class _ProductPageState extends State<ProductPage> {
         'add_to_cart/${userData['_id']}/',
         body: {
           'item_id': widget.product.id,
-          'quantity': _quantity,
+          'quantity': 1, // Default to 1 since quantity selector is removed
         }
       );
       
@@ -188,20 +187,6 @@ class _ProductPageState extends State<ProductPage> {
       _showMessage("Error adding to cart");
       return false;
     }
-  }
-
-  void _incrementQuantity() {
-    setState(() {
-      _quantity++;
-    });
-  }
-
-  void _decrementQuantity() {
-    setState(() {
-      if (_quantity > 1) {
-        _quantity--;
-      }
-    });
   }
   
   @override
@@ -269,15 +254,17 @@ class _ProductPageState extends State<ProductPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             "Fably",
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                              fontFamily: 'Italiana',
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.shopping_bag_outlined, size: 28),
+                            icon: const Icon(Icons.shopping_bag, size: 28, color: Colors.black),
                             onPressed: () async {
                               if (await checkLoggedIn(context)) {
                                 Navigator.push(
@@ -297,7 +284,7 @@ class _ProductPageState extends State<ProductPage> {
                     top: 60,
                     left: 16,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios),
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -310,14 +297,19 @@ class _ProductPageState extends State<ProductPage> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.black, width: 1),
                           ),
                           child: const Text(
                             "Size",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                              fontFamily: 'Italiana',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -369,7 +361,7 @@ class _ProductPageState extends State<ProductPage> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Price and Wishlist
+                    // Price and Favorites
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -380,6 +372,7 @@ class _ProductPageState extends State<ProductPage> {
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
+                                fontFamily: 'Jura',
                               ),
                             ),
                             const SizedBox(width: 20),
@@ -387,34 +380,43 @@ class _ProductPageState extends State<ProductPage> {
                               "\$${widget.product.price.toStringAsFixed(0)}",
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 24,
+                                fontSize: 30,
                                 fontWeight: FontWeight.bold,
+                                fontFamily: 'Jura',
                               ),
                             ),
                           ],
                         ),
                         Row(
                           children: [
-                            IconButton(
-                              icon: Icon(
-                                _isWishlisted ? Icons.favorite : Icons.favorite_border,
-                                color: _isWishlisted ? Colors.red : Colors.white,
-                                size: 28,
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1),
                               ),
-                              onPressed: () async {
-                                bool success = await _toggleWishlist();
-                                if (success) {
-                                  setState(() {
-                                    _isWishlisted = !_isWishlisted;
-                                  });
-                                }
-                              },
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                                onPressed: () async {
+                                  bool success = await _toggleWishlist();
+                                  if (success) {
+                                    setState(() {
+                                      _isWishlisted = !_isWishlisted;
+                                    });
+                                  }
+                                },
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             const Text(
                               "Favorites",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
+                                fontFamily: 'Jura',
                               ),
                             ),
                           ],
@@ -423,39 +425,6 @@ class _ProductPageState extends State<ProductPage> {
                     ),
                     
                     const SizedBox(height: 24),
-                    
-                    // Quantity selector (added)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Quantity:",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
-                          onPressed: _decrementQuantity,
-                        ),
-                        Text(
-                          "$_quantity",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                          onPressed: _incrementQuantity,
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 16),
                     
                     // Buy Now button
                     SizedBox(
