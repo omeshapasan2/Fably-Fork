@@ -297,6 +297,22 @@ def get_user_order_items(user_id):
     return jsonify(return_order), 200
 ### User Order
 
+app.route("/create-payment-intent", methods=["POST"])
+def create_payment():
+    try:
+        data = request.json
+        amount = data.get("amount")  # Amount in cents (e.g., 1000 for $10.00)
+
+        if not amount:
+            return jsonify({"error": "Amount is required"}), 400
+
+        # Create a PaymentIntent with Stripe
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency="usd",
+            payment_method_types=["card"],
+        )
+
 # ---------------- SELLER & ITEM MANAGEMENT (UNCHANGED) ----------------
 
 @app.route('/register', methods=['GET', 'POST'])
