@@ -1,6 +1,8 @@
 import base64
 from io import BytesIO
 from pathlib import Path
+
+import stripe
 import cloudinary
 import cloudinary.uploader
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session, abort, make_response
@@ -41,6 +43,8 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True, origins="*")
 
 app.secret_key = 'f46a1ac2564717c33df1b0dcd5f2b336'
+stripe.api_key = "sk_test_51QxRgVG8IzWoJC0qhizvf6sBgpfEErQexvGlhomL0tRoM18uQymCwi4SweGupBhHijqkFSjfAqes9vJW3s70PPKj00jqzDNXtl"
+
 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
