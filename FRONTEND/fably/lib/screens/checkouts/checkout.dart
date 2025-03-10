@@ -35,6 +35,9 @@ class _CheckoutFormState extends State<CheckoutForm> {
   final TextEditingController _postalCodeController = TextEditingController();
 
   final String apiUrl = "http://10.0.2.2:5000/submit-checkout-form"; // Use 10.0.2.2 for Emulator
+  final String stripeApiUrl = "http://10.0.2.2:5000/create-payment-intent"; // Backend URL for Stripe payment
+  final String confirmPaymentUrl = "http://10.0.2.2:5000/confirm-payment"; // Confirm Payment API URL
+
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
