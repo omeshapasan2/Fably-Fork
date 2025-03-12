@@ -460,33 +460,6 @@ class _ProductPageState extends State<ProductPage> {
                 ),
               ),
             ),
-            
-            // Bottom navigation
-            Container(
-              height: 60,
-              color: Colors.black,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.home_outlined, color: Colors.white, size: 28),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.favorite_border, color: Colors.white, size: 28),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.grid_view, color: Colors.white, size: 28),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.person_outline, color: Colors.white, size: 28),
-                    onPressed: () {},
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
