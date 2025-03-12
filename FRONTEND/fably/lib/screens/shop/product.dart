@@ -394,11 +394,17 @@ class _ProductPageState extends State<ProductPage> {
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white, width: 1),
                               ),
+                              padding: const EdgeInsets.all(2),
                               child: IconButton(
                                 icon: const Icon(
                                   Icons.add,
                                   color: Colors.white,
-                                  size: 22,
+                                  size: 18,
+                                ),
+                                padding: const EdgeInsets.all(6),
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
                                 ),
                                 onPressed: () async {
                                   bool success = await _toggleWishlist();
