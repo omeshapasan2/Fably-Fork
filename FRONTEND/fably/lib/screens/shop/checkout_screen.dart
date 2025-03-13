@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../home/home.dart';
-import '../../utils/requests.dart';
 import 'success_page.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -12,7 +11,10 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _paymentFormKey = GlobalKey<FormState>();
+  final _cardDetailsFormKey = GlobalKey<FormState>();
+  final _reviewFormKey = GlobalKey<FormState>();
+
   int _currentStep = 0;
 
   final TextEditingController emailController = TextEditingController();
@@ -26,32 +28,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   String selectedPaymentMethod = "Card";
 
-  bool processingCheckout = false;
-
   void _showMessage(String message) {
-    print(message);
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _nextStep() {
+    setState(() {
+      _currentStep += 1;
+    });
+  }
+
+  void _previousStep() {
+    setState(() {
+      _currentStep -= 1;
+    });
+  }
+
   Future<void> submitOrder() async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SuccessPage(
-          email: emailController.text,
-          name: nameController.text,
-          address: addressController.text,
-          phone: phoneController.text,
-          postalCode: postalCodeController.text,
-          cardNumber: cardNumberController.text,
-          expiration: expirationController.text,
-          cvv: cvvController.text,
-          paymentMethod: selectedPaymentMethod,
+    if (_reviewFormKey.currentState?.validate() ?? false) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SuccessPage(
+            email: emailController.text.trim(),
+            name: nameController.text.trim(),
+            address: addressController.text.trim(),
+            phone: phoneController.text.trim(),
+            postalCode: postalCodeController.text.trim(),
+            cardNumber: cardNumberController.text.trim(),
+            expiration: expirationController.text.trim(),
+            cvv: cvvController.text.trim(),
+            paymentMethod: selectedPaymentMethod,
+          ),
         ),
-      ),
-    );
-    return;
+      );
+    } else {
+      _showMessage("Please fix the errors in the form.");
+    }
   }
 
   @override
@@ -61,31 +75,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop(); // Navigate back to the previous screen
-          },
+          onPressed: () => Navigator.of(context).pop(),
         ),
         backgroundColor: Colors.black,
         title: const Text(
           "Checkout",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        centerTitle: true, // Centers the title
+        centerTitle: true,
       ),
-      /*appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text("Checkout", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-      ),*/
       body: Container(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Expanded(
@@ -97,76 +97,94 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: Stepper(
                   currentStep: _currentStep,
                   onStepContinue: () {
-                    if (_currentStep < 2) {
-                      setState(() {
-                        _currentStep += 1;
-                      });
-                    } else {
+                    if (_currentStep == 0) {
+                      if (_paymentFormKey.currentState?.validate() ?? false) {
+                        _nextStep();
+                      } else {
+                        _showMessage("Please fix the errors in this step.");
+                      }
+                    } else if (_currentStep == 1) {
+                      if (_cardDetailsFormKey.currentState?.validate() ??
+                          false) {
+                        _nextStep();
+                      } else {
+                        _showMessage("Please fix the errors in this step.");
+                      }
+                    } else if (_currentStep == 2) {
                       submitOrder();
                     }
                   },
                   onStepCancel: () {
                     if (_currentStep > 0) {
-                      setState(() {
-                        _currentStep -= 1;
-                      });
+                      _previousStep();
                     } else {
-                      Navigator.of(context)
-                          .pop(); // Navigate back if on first step
+                      Navigator.of(context).pop();
                     }
                   },
                   steps: [
                     Step(
                       title: _stepTitle("Payment Method"),
-                      content: _paymentMethodSelector(),
+                      content: Form(
+                        key: _paymentFormKey,
+                        child: _paymentMethodSelector(),
+                      ),
                     ),
                     Step(
                       title: _stepTitle("Card Details"),
-                      content: Column(
-                        children: [
-                          _buildTextField(
+                      content: Form(
+                        key: _cardDetailsFormKey,
+                        child: Column(
+                          children: [
+                            _buildTextField(
                               cardNumberController,
                               "Card Number",
-                              r'^[0-9]{16}\$',
-                              "Enter a valid 16-digit card number"),
-                          _buildTextField(
+                              r'^[0-9]{16}$',
+                              "Enter a valid 16-digit card number",
+                            ),
+                            _buildTextField(
                               expirationController,
                               "Expiration (MM/YY)",
-                              r'^(0[1-9]|1[0-2])/[0-9]{2}\$',
-                              "Enter a valid expiration date (MM/YY)"),
-                          _buildTextField(
+                              r'^(0[1-9]|1[0-2])/[0-9]{2}$',
+                              "Enter a valid expiration date (MM/YY)",
+                            ),
+                            _buildTextField(
                               cvvController,
                               "CVV",
-                              r'^[0-9]{3,4}\$',
-                              "Enter a valid CVV (3 or 4 digits)"),
-                        ],
+                              r'^[0-9]{3,4}$',
+                              "Enter a valid CVV (3 or 4 digits)",
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     Step(
                       title: _stepTitle("Review & Confirm"),
-                      content: Column(
-                        children: [
-                          _buildTextField(nameController, "Full Name"),
-                          _buildTextField(
+                      content: Form(
+                        key: _reviewFormKey,
+                        child: Column(
+                          children: [
+                            _buildTextField(nameController, "Full Name"),
+                            _buildTextField(
                               emailController,
                               "E-mail",
-                              r'^[^@\s]+@[^@\s]+\.[^@\s]+\$',
-                              "Enter a valid email address"),
-                          _buildTextField(addressController, "Address"),
-                          _buildTextField(
+                              r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                              "Enter a valid email address",
+                            ),
+                            _buildTextField(addressController, "Address"),
+                            _buildTextField(
                               phoneController,
                               "Phone Number",
-                              r'^\+?[0-9]{10,15}\$',
-                              "Enter a valid phone number"),
-                          _buildTextField(
-                            postalCodeController,
-                            "Postal Code",
-                            r'^[0-9]{4,10}$',
-                            "Enter a valid postal code",
-                          ),
-                          SizedBox(height: 20),
-                          _submitButton(),
-                        ],
+                              r'^\+?[0-9]{10,15}$',
+                              "Enter a valid phone number",
+                            ),
+                            _buildTextField(
+                              postalCodeController,
+                              "Postal Code",
+                              r'^[0-9]{4,10}$',
+                              "Enter a valid postal code",
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -182,8 +200,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _stepTitle(String text) {
     return Text(
       text,
-      style: TextStyle(
-          color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
     );
   }
 
@@ -199,7 +220,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Widget _customRadioTile(String title, IconData icon, Color color) {
     return ListTile(
-      title: Text(title, style: TextStyle(color: Colors.white, fontSize: 16)),
+      title: Text(title,
+          style: const TextStyle(color: Colors.white, fontSize: 16)),
       leading: Icon(icon, color: color),
       trailing: Radio(
         value: title,
@@ -214,49 +236,49 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label,
-      [String? pattern, String? errorMessage]) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label, [
+    String? pattern,
+    String? errorMessage,
+  ]) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
-        style: TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.white),
+          labelStyle: const TextStyle(color: Colors.white),
           filled: true,
           fillColor: Colors.white.withOpacity(0.1),
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white),
+            borderSide: const BorderSide(color: Colors.white),
             borderRadius: BorderRadius.circular(15),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.blueAccent),
+            borderSide: const BorderSide(color: Colors.blueAccent),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(width: 1),
+            
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Colors.red, width: 2),
             borderRadius: BorderRadius.circular(15),
           ),
         ),
         validator: (value) {
           if (value!.isEmpty) return "Enter your $label";
-          if (pattern != null && !RegExp(pattern).hasMatch(value))
+          value = value.trim(); // Remove leading and trailing spaces
+          if (pattern != null && !RegExp(pattern).hasMatch(value)) {
             return errorMessage;
+          }
           return null;
         },
-      ),
-    );
-  }
-
-  Widget _submitButton() {
-    return Center(
-      child: ElevatedButton(
-        onPressed: submitOrder,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blueAccent,
-          padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        ),
-        child: Text("Submit Order",
-            style: TextStyle(fontSize: 16, color: Colors.white)),
       ),
     );
   }

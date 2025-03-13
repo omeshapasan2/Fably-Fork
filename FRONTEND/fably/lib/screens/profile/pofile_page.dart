@@ -289,7 +289,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                   setState(() {
                                     tryOnDebugMode = value;
                                   });
-                                  _showMessage("$tryOnDebugMode", context);
                                 },
                                 activeColor: const Color.fromARGB(255, 10, 218, 218),
                               ),
