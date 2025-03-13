@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../home/home.dart';
 import '../../utils/requests.dart';
-
+import 'success_page.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -30,63 +30,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _showMessage(String message) {
     print(message);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> submitOrder() async {
-    if (processingCheckout){
-      return;
-    }
-    setState(() {
-      processingCheckout = true;
-    });
-    _showMessage("Processing...");
-
-      final requests = BackendRequests();
-      try{
-        final response = await requests.postRequest(
-          'checkout', 
-          body:{
-            "email": emailController.text,
-            "name": nameController.text,
-            "address": addressController.text,
-            "phone": phoneController.text,
-            "postalCode": postalCodeController.text,
-            "card_number": cardNumberController.text,
-            "expiration": expirationController.text,
-            "cvv": cvvController.text,
-            "payment_method": selectedPaymentMethod,
-          }
-        );
-        if (response.statusCode == 201){
-          _showMessage("Order placed successfully!");
-
-          setState(() {
-            processingCheckout = false;
-          });
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HomeScreen(),
-            ),
-          );
-
-        }else{
-          _showMessage("Failed to place order.");
-        }
-
-        
-        
-      
-      } catch (e){
-        _showMessage("Error: $e");
-      }
-
-      setState(() {
-        processingCheckout = false;
-      });
-    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SuccessPage(
+          email: emailController.text,
+          name: nameController.text,
+          address: addressController.text,
+          phone: phoneController.text,
+          postalCode: postalCodeController.text,
+          cardNumber: cardNumberController.text,
+          expiration: expirationController.text,
+          cvv: cvvController.text,
+          paymentMethod: selectedPaymentMethod,
+        ),
+      ),
+    );
+    return;
   }
 
   @override
@@ -97,7 +62,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.of(context).pop();// Navigate back to the previous screen
+            Navigator.of(context).pop(); // Navigate back to the previous screen
           },
         ),
         backgroundColor: Colors.black,
@@ -126,7 +91,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             Expanded(
               child: Card(
                 color: Colors.black.withOpacity(0.6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
                 elevation: 5,
                 child: Stepper(
                   currentStep: _currentStep,
@@ -145,7 +111,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         _currentStep -= 1;
                       });
                     } else {
-                      Navigator.of(context).pop(); // Navigate back if on first step
+                      Navigator.of(context)
+                          .pop(); // Navigate back if on first step
                     }
                   },
                   steps: [
@@ -157,9 +124,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       title: _stepTitle("Card Details"),
                       content: Column(
                         children: [
-                          _buildTextField(cardNumberController, "Card Number", r'^[0-9]{16}\$', "Enter a valid 16-digit card number"),
-                          _buildTextField(expirationController, "Expiration (MM/YY)", r'^(0[1-9]|1[0-2])/[0-9]{2}\$', "Enter a valid expiration date (MM/YY)"),
-                          _buildTextField(cvvController, "CVV", r'^[0-9]{3,4}\$', "Enter a valid CVV (3 or 4 digits)"),
+                          _buildTextField(
+                              cardNumberController,
+                              "Card Number",
+                              r'^[0-9]{16}\$',
+                              "Enter a valid 16-digit card number"),
+                          _buildTextField(
+                              expirationController,
+                              "Expiration (MM/YY)",
+                              r'^(0[1-9]|1[0-2])/[0-9]{2}\$',
+                              "Enter a valid expiration date (MM/YY)"),
+                          _buildTextField(
+                              cvvController,
+                              "CVV",
+                              r'^[0-9]{3,4}\$',
+                              "Enter a valid CVV (3 or 4 digits)"),
                         ],
                       ),
                     ),
@@ -168,10 +147,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       content: Column(
                         children: [
                           _buildTextField(nameController, "Full Name"),
-                          _buildTextField(emailController, "E-mail", r'^[^@\s]+@[^@\s]+\.[^@\s]+\$', "Enter a valid email address"),
+                          _buildTextField(
+                              emailController,
+                              "E-mail",
+                              r'^[^@\s]+@[^@\s]+\.[^@\s]+\$',
+                              "Enter a valid email address"),
                           _buildTextField(addressController, "Address"),
-                          _buildTextField(phoneController, "Phone Number", r'^\+?[0-9]{10,15}\$', "Enter a valid phone number"),
-                          _buildTextField(postalCodeController, "Postal Code", r'^[0-9]{4,10}$', "Enter a valid postal code",),
+                          _buildTextField(
+                              phoneController,
+                              "Phone Number",
+                              r'^\+?[0-9]{10,15}\$',
+                              "Enter a valid phone number"),
+                          _buildTextField(
+                            postalCodeController,
+                            "Postal Code",
+                            r'^[0-9]{4,10}$',
+                            "Enter a valid postal code",
+                          ),
                           SizedBox(height: 20),
                           _submitButton(),
                         ],
@@ -190,7 +182,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _stepTitle(String text) {
     return Text(
       text,
-      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+      style: TextStyle(
+          color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
     );
   }
 
@@ -221,7 +214,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, [String? pattern, String? errorMessage]) {
+  Widget _buildTextField(TextEditingController controller, String label,
+      [String? pattern, String? errorMessage]) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
@@ -243,7 +237,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
         validator: (value) {
           if (value!.isEmpty) return "Enter your $label";
-          if (pattern != null && !RegExp(pattern).hasMatch(value)) return errorMessage;
+          if (pattern != null && !RegExp(pattern).hasMatch(value))
+            return errorMessage;
           return null;
         },
       ),
@@ -257,9 +252,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blueAccent,
           padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         ),
-        child: Text("Submit Order", style: TextStyle(fontSize: 16, color: Colors.white)),
+        child: Text("Submit Order",
+            style: TextStyle(fontSize: 16, color: Colors.white)),
       ),
     );
   }

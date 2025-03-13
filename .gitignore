@@ -1,3 +1,7 @@
 *.pyc
 /.idea
 /.vscode
+*.bin
+*.o
+*.cmake
+/FRONTEND/fably/android/app/.cxx/Debug
