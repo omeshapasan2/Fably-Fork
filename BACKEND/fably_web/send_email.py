@@ -35,7 +35,7 @@ def send_email(receiver_email, subject, body):
         server.quit()  # Always close the server
 
 if __name__=="__main__":
-    receiver_email = "vbuthgamuwa@gmail.com"
+    receiver_email = "fably.notification@gmail.com"
     subject = "Test Email from Python"
     body = "<h1>This is a <b>test</b> email sent from Python!</h1>"
     

@@ -446,7 +446,15 @@ class _CartPageState extends State<CartPage> {
                     );
                     //Navigator.pushNamed(context, '/checkout');
                   },
-                  child: Text('Checkout'),
+                  child: Text(
+                    'Checkout',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20, // Adjust text size
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Jura",
+                    ),
+                  ),
                 ),
               ),
             ],

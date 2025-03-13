@@ -97,46 +97,8 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
       );
     }
     setState(() {
-      // temporary
       isLoading = false;
     });
-  
-
-    /*
-    try {
-      final uri = Uri.parse('https://your-backend-url.com/virtual-try-on');
-      var request = http.MultipartRequest('POST', uri);
-
-      // Add image file
-      request.files.add(await http.MultipartFile.fromPath(
-        'image',
-        widget.inputImage!.path,
-      ));
-
-      // Add ID as a form field
-      request.fields['id'] = widget.id;
-
-      // Send request and handle response
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        final responseData = await response.stream.toBytes();
-        setState(() {
-          resultImageBytes = responseData; // Store the received image bytes
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          errorMessage = "Failed to load result. Status code: ${response.statusCode}";
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = "An error occurred: $e";
-        isLoading = false;
-      });
-    }*/
   }
 
   @override
@@ -159,17 +121,37 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Center(
-          child: isLoading
-            ? CircularProgressIndicator()
-              : errorMessage != null
-                  ? Text(
-                      errorMessage!,
-                      style: TextStyle(color: Colors.red),
-                    )
-                  : //resultImageBytes != null
-                  image_url != ""
-                      ? Image.network(image_url) // Display the received image
-                      : Text('No result to display.'),
+          child:Column(
+            mainAxisAlignment: MainAxisAlignment.center, 
+            children:isLoading
+            ? <Widget>[
+                // Loading Screen
+                CircularProgressIndicator(),
+                const SizedBox(height: 20),
+                Text(
+                  'Generating Image. This might take a few minuites',
+                  textAlign: TextAlign.center, 
+                  style: const TextStyle(
+                    fontSize: 20 /*, fontWeight: FontWeight.bold*/),
+                ),
+              ]
+              
+            : errorMessage != null
+              ? <Widget>[
+                  Text(
+                    errorMessage!,
+                    style: TextStyle(color: Colors.red),
+                  )
+                ]
+              : image_url != ""
+                ? <Widget>[
+                    Image.network(image_url) // Display the received image
+                  ]
+                  
+                : <Widget>[
+                    Text('No result to display.')
+                  ]
+          ),
         ),
       ),
     );

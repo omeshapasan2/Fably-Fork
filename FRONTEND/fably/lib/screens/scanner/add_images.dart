@@ -293,25 +293,66 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.black,
-                        ),
-                        child: Text(
-                          'Select Your Image',
-                          style: TextStyle(fontFamily: "jura", 
-                          fontSize: 18),),
-                        
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton.icon(
-                        onPressed: () => _takePicture(true),
-                        icon: Icon(
-                          Icons.camera_alt,
-                          color: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12), // Optional rounded corners
                           ),
+                          padding: EdgeInsets.all(12), // Inner padding
+                          fixedSize: const Size(120, 100), // Ensure a square size
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image, // Choose an appropriate icon
+                              size: 40, // Larger icon size
+                              color: Colors.black,
+                            ),
+                            const SizedBox(height: 8), // Space between icon and text
+                            const Text(
+                              'Gallery',
+                              style: TextStyle(
+                                fontSize: 14, // Adjust text size
+                                fontWeight: FontWeight.bold,
+                                fontFamily: "Jura",
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(width: 60),
+                      ElevatedButton(
+                        onPressed: () => _takePicture(true),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12), // Optional: Rounded corners
+                          ),
+                          padding: EdgeInsets.all(12), // Adjust padding to ensure square shape
+                          fixedSize: const Size(120, 100), // Set a fixed square size
                         ),
-                        label: Text('Capture'),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.camera_alt,
+                              size: 40, // Larger icon
+                              color: Colors.black,
+                            ),
+                            const SizedBox(height: 8), // Space between icon and text
+                            const Text(
+                              'Capture',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 14, // Adjust text size
+                                fontWeight: FontWeight.bold,
+                                fontFamily: "Jura",
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -352,17 +393,33 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                     ],
                   ),
                   SizedBox(height: 30),*/
-                  ElevatedButton.icon(
-                    onPressed: _uploadImages,
-                    icon: Icon(
-                      Icons.upload,
-                      color: Colors.black,
+                  SizedBox(
+                    width: 300, // Adjust the width as needed
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: _uploadImages,
+                      icon: Icon(
+                        Icons.upload,
+                        color: Colors.black,
                       ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
+                      
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12), // Optional: Rounded corners
+                        ),
+                      ),
+                      label: Text(
+                        'Upload Image',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 20, // Adjust text size
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "Jura",
+                        ),
+                      ),
                     ),
-                    label: Text('Upload Image'),
                   ),
                 ],
               ),
