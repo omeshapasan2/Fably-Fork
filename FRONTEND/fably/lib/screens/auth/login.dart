@@ -27,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   String _message = '';
   bool _isLoading = false;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
@@ -141,6 +142,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Login method wrapper to handle void callback
   void _handleLogin() {
+    if (_formKey.currentState?.validate() != true) {
+      // Validation passed
+      return;
+    }
     if (!_isLoading) {
       _login().then((value) => null);
     }
@@ -223,6 +228,10 @@ class _LoginScreenState extends State<LoginScreen> {
   // Forgot password method wrapper
   void _handleForgotPassword() {
     //_forgotPassword();
+    if (_formKey.currentState?.validate() != true) {
+      // Validation passed
+      return;
+    }
     forgotPassword(_emailController.text);
   }
 
@@ -307,68 +316,81 @@ Widget build(BuildContext context) {
                 alignment: Alignment.center,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 300),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'LOGIN',
-                        style: TextStyle(
-                          letterSpacing: 8,
-                          fontFamily: 'jura',
-                          fontSize: 53,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        const Text(
+                          'LOGIN',
+                          style: TextStyle(
+                            letterSpacing: 8,
+                            fontFamily: 'jura',
+                            fontSize: 53,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 60),
-                      AuthTextField(
-                        controller: _emailController, 
-                        labelText: 'Email',
-                      ),
-                      AuthTextField(
-                        controller: _passwordController,
-                        labelText: 'Password',
-                        obscureText: true,
-                      ),
-                      const SizedBox(height: 50),
-                      AuthButton(
-                        text: 'LOGIN',
-                        onPressed: _isLoading ? () {} : _handleLogin,
-                      ),
-                      TextButton(
-                        onPressed: _isLoading ? null : _handleForgotPassword,
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(color: Colors.white, fontSize: 13, height: 10)
+                        const SizedBox(height: 60),
+                        AuthTextField(
+                          controller: _emailController, 
+                          labelText: 'Email',
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Email is required';
+                            }
+                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                .hasMatch(value)) {
+                              return 'Enter a valid email address';
+                            }
+                            return null;
+                          },
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                          );
-                        },
-                        child: const Text(
-                          "Don't have an account? Register",
-                          style: TextStyle(color: Colors.white)
+                        AuthTextField(
+                          controller: _passwordController,
+                          labelText: 'Password',
+                          obscureText: true,
                         ),
-                      ),
-                      if (_message == 'Email not verified. Check your inbox.')
-                        ElevatedButton(
-                          onPressed: _handleResendVerification,
-                          child: const Text('Resend Verification Email'),
+                        const SizedBox(height: 50),
+                        AuthButton(
+                          text: 'LOGIN',
+                          onPressed: _isLoading ? () {} : _handleLogin,
                         ),
-                      const SizedBox(height: 20),
-                      Text(
-                        _message,
-                        style: const TextStyle(
-                          fontFamily: 'Jura',
-                          fontSize: 16,
-                          color: Colors.white,
+                        TextButton(
+                          onPressed: _isLoading ? null : _handleForgotPassword,
+                          child: const Text(
+                            'Forgot Password?',
+                            style: TextStyle(color: Colors.white, fontSize: 13, height: 10)
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 30),
-                    ],
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                            );
+                          },
+                          child: const Text(
+                            "Don't have an account? Register",
+                            style: TextStyle(color: Colors.white)
+                          ),
+                        ),
+                        if (_message == 'Email not verified. Check your inbox.')
+                          ElevatedButton(
+                            onPressed: _handleResendVerification,
+                            child: const Text('Resend Verification Email'),
+                          ),
+                        const SizedBox(height: 20),
+                        Text(
+                          _message,
+                          style: const TextStyle(
+                            fontFamily: 'Jura',
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
                 ),
               ),

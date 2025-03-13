@@ -21,25 +21,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   String _message = '';
   bool _isLoading = false;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // Register method
-  Future<bool> registerCustomer(String firstName, String lastName, String email, String password) async {
+  Future<bool> registerCustomer(
+      String firstName, String lastName, String email, String password) async {
     final requests = BackendRequests();
 
-    final registerResponse = await requests.postRequest(
-      'register_customer', 
-      body: {
-        'first_name': firstName,
-        'last_name': lastName,
-        'email': email,
-        'password': password,
-      }
-    );
+    final registerResponse =
+        await requests.postRequest('register_customer', body: {
+      'first_name': firstName,
+      'last_name': lastName,
+      'email': email,
+      'password': password,
+    });
 
     if (registerResponse.statusCode == 200) {
       print("Register successful.");
@@ -52,6 +53,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    if (_formKey.currentState?.validate() != true) {
+      // Validation passed
+      return;
+    }
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
         _message = 'Passwords do not match.';
@@ -72,9 +77,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       setState(() {
-        _message = registerSuccess 
-          ? 'Account created! Check your email for verification.' 
-          : 'Registration failed.';
+        _message = registerSuccess
+            ? 'Account created! Check your email for verification.'
+            : 'Registration failed.';
         _isLoading = false;
       });
 
@@ -127,128 +132,172 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
-Widget build(BuildContext context) {
-  // ignore: deprecated_member_use
-  return WillPopScope(
-    onWillPop: () async {
-      if (Platform.isAndroid) {
-        SystemNavigator.pop(); // For Android
-      } else if (Platform.isIOS) {
-        exit(0); // For iOS and other platforms
-      }
-      return false;
-    },
-    child:Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 50), // Reduced to make room for new title
-              const Text(
-                'FABLY',
-                style: TextStyle(
-                  fontFamily: 'jura',
-                  fontSize: 50,
-                  letterSpacing: 3,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 30), // Added spacing between titles
-              Align(
-                alignment: Alignment.center,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'REGISTER',
-                        style: TextStyle(
-                          letterSpacing: 8,
-                          fontFamily: 'Jura',
-                          fontSize: 53,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-
-                      // First Name Field
-                      AuthTextField(
-                        controller: _firstNameController, 
-                        labelText: 'First Name',
-                      ),
-
-                      // Last Name Field
-                      AuthTextField(
-                        controller: _lastNameController, 
-                        labelText: 'Last Name',
-                      ),
-
-                      // Email Field
-                      AuthTextField(
-                        controller: _emailController, 
-                        labelText: 'Email',
-                      ),
-
-                      // Password Field
-                      AuthTextField(
-                        controller: _passwordController,
-                        labelText: 'Password',
-                        obscureText: true,
-                      ),
-
-                      // Confirm Password Field
-                      AuthTextField(
-                        controller: _confirmPasswordController,
-                        labelText: 'Confirm Password',
-                        obscureText: true,
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Register Button
-                      AuthButton(text: 'REGISTER', onPressed: _register),
-
-                      const SizedBox(height: 50),
-
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen()
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Already have an account? Login',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      Text(
-                        _message,
-                        style: const TextStyle(
-                          fontFamily: 'Jura',
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-
-                      const SizedBox(height: 30),
-                    ],
+  Widget build(BuildContext context) {
+    // ignore: deprecated_member_use
+    return WillPopScope(
+      onWillPop: () async {
+        if (Platform.isAndroid) {
+          SystemNavigator.pop(); // For Android
+        } else if (Platform.isIOS) {
+          exit(0); // For iOS and other platforms
+        }
+        return false;
+      },
+      child: Scaffold(
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const SizedBox(
+                    height: 50), // Reduced to make room for new title
+                const Text(
+                  'FABLY',
+                  style: TextStyle(
+                    fontFamily: 'jura',
+                    fontSize: 50,
+                    letterSpacing: 3,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-              ),
-              const SizedBox(height: 50),
-            ],
+                const SizedBox(height: 30), // Added spacing between titles
+                Align(
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          const Text(
+                            'REGISTER',
+                            style: TextStyle(
+                              letterSpacing: 8,
+                              fontFamily: 'Jura',
+                              fontSize: 53,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+
+                          // First Name Field
+                          AuthTextField(
+                            controller: _firstNameController,
+                            labelText: 'First Name',
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'First Name is required';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          // Last Name Field
+                          AuthTextField(
+                            controller: _lastNameController,
+                            labelText: 'Last Name',
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'First Name is required';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          // Email Field
+                          AuthTextField(
+                            controller: _emailController,
+                            labelText: 'Email',
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Email is required';
+                              }
+                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                  .hasMatch(value)) {
+                                return 'Enter a valid email address';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          // Password Field
+                          AuthTextField(
+                            controller: _passwordController,
+                            labelText: 'Password',
+                            obscureText: true,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Password is required';
+                              }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          // Confirm Password Field
+                          AuthTextField(
+                            controller: _confirmPasswordController,
+                            labelText: 'Confirm Password',
+                            obscureText: true,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Confirm Password is required';
+                              }
+                              if (value != _passwordController.text) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Register Button
+                          AuthButton(text: 'REGISTER', onPressed: _register),
+
+                          const SizedBox(height: 50),
+
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const LoginScreen()),
+                              );
+                            },
+                            child: const Text(
+                              'Already have an account? Login',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          Text(
+                            _message,
+                            style: const TextStyle(
+                              fontFamily: 'Jura',
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+
+                          const SizedBox(height: 30),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 50),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}}
+    );
+  }
+}

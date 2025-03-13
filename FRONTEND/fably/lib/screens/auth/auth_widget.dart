@@ -5,12 +5,14 @@ class AuthTextField extends StatelessWidget {
   final String labelText;
   final bool obscureText;
   final EdgeInsets? margin; // Add margin parameter
+  final String? Function(String?)? validator; // Add validator parameter
 
   const AuthTextField({super.key, 
     required this.controller,
     required this.labelText,
     this.obscureText = false,
     this.margin = const EdgeInsets.only(bottom: 23), // Default bottom margin
+    this.validator, // Accept validator
   });
 
   @override
@@ -21,9 +23,10 @@ class AuthTextField extends StatelessWidget {
         constraints: const BoxConstraints(
           maxWidth: 300,
         ),
-        child: TextField(
+        child: TextFormField(
           controller: controller,
           obscureText: obscureText,
+          validator: validator, // Apply validation
           decoration: InputDecoration(
             labelText: labelText,
             contentPadding: EdgeInsets.only(left: 16),
