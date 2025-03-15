@@ -1,3 +1,4 @@
+import 'package:fably/screens/shop/components/product_rating.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,6 +54,9 @@ class _ProductPageState extends State<ProductPage> {
   int _currentPage = 0;
   bool _isWishlisted = false;
   bool _isLoading = true;
+  double _averageRating = 0.0;
+  int reviewCount = 0;
+  int sumRating = 0;
 
   Future<bool> checkLoggedIn(BuildContext context) async {
     final prefs = Prefs();
@@ -77,6 +81,34 @@ class _ProductPageState extends State<ProductPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message))
       );
+    }
+  }
+
+  Future<void> getReviewAverage() async {
+    final request = BackendRequests();
+    print("getReviewAverage");
+    
+    final response = await request.postRequest(
+      'get_review_average/',
+      body: {
+        'item_id': widget.product.id,
+      }
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        reviewCount = data['review_count'];
+        sumRating = data['rating_sum'];
+        if (reviewCount == 0){
+          _averageRating = 0.0;
+        } else {
+          _averageRating = data['rating_sum'] / data['review_count'];
+        }
+      });
+    } else {
+      print("Failed to get review average: ${response.statusCode}");
+      print("Response: ${response.body}");
     }
   }
 
@@ -192,6 +224,9 @@ class _ProductPageState extends State<ProductPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async{
+      await getReviewAverage();
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkWishlisted();
     });
@@ -321,6 +356,21 @@ class _ProductPageState extends State<ProductPage> {
                       ],
                     ),
                   ),
+                  Positioned(
+                    right: 16,
+                    top: 400,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        MiniRatingCard(
+                          itemName: widget.product.name,
+                          itemId: widget.product.id,
+                          sumRating: sumRating,
+                          reviewCount: reviewCount
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -396,7 +446,7 @@ class _ProductPageState extends State<ProductPage> {
                               ),
                               padding: const EdgeInsets.all(2),
                               child: IconButton(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.add,
                                   color: Colors.white,
                                   size: 18,
