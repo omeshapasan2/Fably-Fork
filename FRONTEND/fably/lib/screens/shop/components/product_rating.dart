@@ -141,6 +141,11 @@ class MiniRatingCard extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  Text(
+                    _averageRating.toStringAsFixed(1),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(width: 4),
                   Icon(
                     _averageRating >= 1.0
                         ? Icons.star
@@ -150,15 +155,11 @@ class MiniRatingCard extends StatelessWidget {
                     color: Colors.amber,
                     size: 18,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _averageRating.toStringAsFixed(1),
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                  ),
+                  
                 ],
               ),
               Text(
-                " | ($reviewCount)",
+                " ($reviewCount)",
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ],
