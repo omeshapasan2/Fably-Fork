@@ -1,3 +1,4 @@
+import 'package:fably/screens/shop/components/product_rating.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,6 +54,9 @@ class _ProductPageState extends State<ProductPage> {
   int _currentPage = 0;
   bool _isWishlisted = false;
   bool _isLoading = true;
+  double _averageRating = 0.0;
+  int reviewCount = 0;
+  int sumRating = 0;
 
   Future<bool> checkLoggedIn(BuildContext context) async {
     final prefs = Prefs();
@@ -77,6 +81,34 @@ class _ProductPageState extends State<ProductPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message))
       );
+    }
+  }
+
+  Future<void> getReviewAverage() async {
+    final request = BackendRequests();
+    print("getReviewAverage");
+    
+    final response = await request.postRequest(
+      'get_review_average/',
+      body: {
+        'item_id': widget.product.id,
+      }
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        reviewCount = data['review_count'];
+        sumRating = data['rating_sum'];
+        if (reviewCount == 0){
+          _averageRating = 0.0;
+        } else {
+          _averageRating = data['rating_sum'] / data['review_count'];
+        }
+      });
+    } else {
+      print("Failed to get review average: ${response.statusCode}");
+      print("Response: ${response.body}");
     }
   }
 
@@ -189,11 +221,76 @@ class _ProductPageState extends State<ProductPage> {
     }
   }
   
+  /*@override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async{
+      await getReviewAverage();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkWishlisted();
+    });
+  }*/
+
+  Future<bool> inWishlist(String id) async {
+    final requests = BackendRequests();
+    final prefs = Prefs();
+
+    String cookies = '';
+    Map userInfo = {};
+    cookies = await prefs.getPrefs('cookies') ?? '';
+    String? info = await prefs.getPrefs('userInfo');
+    userInfo = jsonDecode( info ?? '{}');
+    
+    final changeResponse = await requests.postRequest(
+      'in_wishlist/${userInfo['_id']}/',
+      body:{
+        'item_id': id,
+      }
+      );
+    // Step 4: Handle the login response
+    if (changeResponse.statusCode == 200) {
+      // Parse the returned user info
+      print(changeResponse.body);
+
+      // Extract cookies from the response headers
+      // Note: The cookie string might include additional attributes
+      final String? cookies = changeResponse.headers['set-cookie'];
+      print("Cookies: $cookies");
+
+      // Step 5: Save the user info and cookies using SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userInfo', jsonEncode(userInfo));
+      if (cookies != null) {
+        await prefs.setString('cookies', cookies);
+      }
+
+      //print("Added Item Successfully");
+      if (changeResponse.body == "true"){
+        return true;
+      } else if (changeResponse.body == "false"){
+        return false;
+      }
+      return true;
+    } else {
+      print("Failed to get status: ${changeResponse.statusCode}");
+      print("Response: ${changeResponse.body}");
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkWishlisted();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await getReviewAverage();
+      inWishlist(widget.product.id).then((x){
+        setState((){
+          _isWishlisted = x;
+          _isLoading = false;
+          //_averageRating = 3.3;
+        });
+      });
     });
   }
 
@@ -318,6 +415,21 @@ class _ProductPageState extends State<ProductPage> {
                         _buildSizeButton("M", "M"),
                         const SizedBox(height: 8),
                         _buildSizeButton("L", "L"),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    right: 16,
+                    top: 400,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        MiniRatingCard(
+                          itemName: widget.product.name,
+                          itemId: widget.product.id,
+                          sumRating: sumRating,
+                          reviewCount: reviewCount
+                        ),
                       ],
                     ),
                   ),
