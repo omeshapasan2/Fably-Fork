@@ -221,7 +221,7 @@ class _ProductPageState extends State<ProductPage> {
     }
   }
   
-  /*@override
+  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async{
@@ -229,68 +229,6 @@ class _ProductPageState extends State<ProductPage> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkWishlisted();
-    });
-  }*/
-
-  Future<bool> inWishlist(String id) async {
-    final requests = BackendRequests();
-    final prefs = Prefs();
-
-    String cookies = '';
-    Map userInfo = {};
-    cookies = await prefs.getPrefs('cookies') ?? '';
-    String? info = await prefs.getPrefs('userInfo');
-    userInfo = jsonDecode( info ?? '{}');
-    
-    final changeResponse = await requests.postRequest(
-      'in_wishlist/${userInfo['_id']}/',
-      body:{
-        'item_id': id,
-      }
-      );
-    // Step 4: Handle the login response
-    if (changeResponse.statusCode == 200) {
-      // Parse the returned user info
-      print(changeResponse.body);
-
-      // Extract cookies from the response headers
-      // Note: The cookie string might include additional attributes
-      final String? cookies = changeResponse.headers['set-cookie'];
-      print("Cookies: $cookies");
-
-      // Step 5: Save the user info and cookies using SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userInfo', jsonEncode(userInfo));
-      if (cookies != null) {
-        await prefs.setString('cookies', cookies);
-      }
-
-      //print("Added Item Successfully");
-      if (changeResponse.body == "true"){
-        return true;
-      } else if (changeResponse.body == "false"){
-        return false;
-      }
-      return true;
-    } else {
-      print("Failed to get status: ${changeResponse.statusCode}");
-      print("Response: ${changeResponse.body}");
-    }
-    return false;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await getReviewAverage();
-      inWishlist(widget.product.id).then((x){
-        setState((){
-          _isWishlisted = x;
-          _isLoading = false;
-          //_averageRating = 3.3;
-        });
-      });
     });
   }
 
@@ -508,7 +446,7 @@ class _ProductPageState extends State<ProductPage> {
                               ),
                               padding: const EdgeInsets.all(2),
                               child: IconButton(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.add,
                                   color: Colors.white,
                                   size: 18,
