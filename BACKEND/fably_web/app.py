@@ -1245,14 +1245,14 @@ def virtual_try_on_endpoint():
             print(f"Folder already exists: {folder_path}")
 
         # Save the image file (optional)
-        image.save(f'{root_folder}/inputs/person.png')
+        image.save(f'{root_folder}/inputs/person.png', format="PNG")
         # fetched person image and added to the inputs folder
 
         item = items_collection.find_one({'_id': ObjectId(item_id)})
 
         image2 = fetch_image_from_cloudinary(item['photos'][0])
 
-        image2.save(f'{root_folder}/inputs/cloth.png')
+        image2.save(f'{root_folder}/inputs/cloth.png', format="PNG")
         #||| added image of the cloth to the inputs folder
 
         # virtual try on processing starts here
@@ -1265,7 +1265,7 @@ def virtual_try_on_endpoint():
                 debug = True
 
         if debug:
-            image.save(f'{root_folder}/outputs/output.png')
+            image.save(f'{root_folder}/outputs/output.png', format="PNG")
 
         else:
 
