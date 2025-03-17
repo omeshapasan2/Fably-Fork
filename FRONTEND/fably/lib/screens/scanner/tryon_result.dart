@@ -142,6 +142,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
       _showMessage('Upload successful: ${response.body}');
       setState(() {
         image_url = response.body;
+        isLoading = false;
       });
     } else if (response.statusCode == 200) {
       _showMessage('Upload successful: ${response.body}');

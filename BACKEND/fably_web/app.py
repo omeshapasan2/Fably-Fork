@@ -1508,7 +1508,7 @@ def vton_fetch_url():
         item_id = result['item_id']
         
         try:
-            vton_item = vtons_collection.find_one({'vtonId': result['vtonId']})
+            vton_item = vtons_collection.find_one({'vtonId': result['vton_id']})
         except Exception as e:
             import traceback
             print(traceback.format_exc())
