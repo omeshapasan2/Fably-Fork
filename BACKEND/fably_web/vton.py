@@ -8,6 +8,7 @@ import config
 def tryOn(garment_url, person_url, webhook):
     #logging.debug(config.FASHN_API_KEY)
     print(config.FASHN_API_KEY)
+    webhook = "https://webhook.site/a6c44ce0-540e-402b-adfb-ba6bf0d0aabb"
 
     try:
         response = requests.post(
@@ -22,6 +23,7 @@ def tryOn(garment_url, person_url, webhook):
                 "category": "auto",
             },
         )
+
 
         json_response = {}
 

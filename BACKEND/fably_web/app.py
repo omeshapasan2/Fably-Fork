@@ -35,6 +35,7 @@ from PIL import Image
 import send_email as mail
 import virtual_try_on
 import vton
+import check_url
 
 reset_tokens = {}
 
@@ -1524,6 +1525,14 @@ def vton_fetch_url():
             print(traceback.format_exc())
             return "Error", 500
         
+        # ALTERNATE SOLUTION
+        _url = f"https://cdn.fashn.ai/{result['vton_id']}/output_0.png"
+        if (check_url.check_image(_url)):
+            vton_item['status']='completed'
+            vton_item['url']=_url
+
+        # ALTERNATE SOLUTION END
+
         if (vton_item["status"]=="processing"):
             return "processing", 200
 
