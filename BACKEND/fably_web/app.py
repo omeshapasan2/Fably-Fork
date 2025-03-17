@@ -28,7 +28,7 @@ from flask_cors import CORS
 import secrets
 import hmac
 from PIL import Image
-import logging
+#import logging
 
 
 
@@ -57,7 +57,7 @@ app.config['SECRET_KEY'] = config.SECRET_KEY
 csrf = CSRFProtect(app)
 app.config['DEBUG'] = True
 app.config['WTF_CSRF_ENABLED'] = False
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.WARNING)
 
 # MongoDB setup
 client = MongoClient(config.MONGO_URI)
@@ -1424,7 +1424,7 @@ def virtual_try_on_endpoint_two():
             person_public_id = upload_image_to_cloudinary(f'{root_folder}/inputs/person.png')
             person_url = generate_secure_cloudinary_url(person_public_id)
             webhook_url = url_for('vton_webhook', _external=True)
-            logging.debug(f"webhook_url: {webhook_url}")
+            print(f"webhook_url: {webhook_url}")
             vton_id = vton.tryOn(cloth_url, person_url, webhook_url)
 
             if vton_id == "Error":
@@ -1451,7 +1451,7 @@ def virtual_try_on_endpoint_two():
         user["virtualTryOns"][item_id]["personImage"] = person_public_id
         user["virtualTryOns"][item_id]["status"] = "processing"
 
-        logging.debug("Generating new image:", user["virtualTryOns"][item_id]["vtonId"])
+        print("Generating new image:", user["virtualTryOns"][item_id]["vtonId"])
 
         customers_collection.update_one(
             {'_id': ObjectId(session["user_id"])},  # Query to find the user
@@ -1481,7 +1481,7 @@ def vton_webhook():
             print("Error")
             print(result)
             print("An Error occured while generating the image")
-            return
+            return "", 200
         
         vton_item = vtons_collection.find_one({'vtonId': result['id']})
         vton_item['url'] = result['output'][0]
@@ -1490,11 +1490,16 @@ def vton_webhook():
             {'vtonId': result['id']},
             {'$set': {'url': vton_item['url'], 'status': 'completed'}}
         )
+
+        return "", 200
     
     except Exception as e:
         import traceback
         print(traceback.format_exc())
         print('Error: ' + str(e))
+        return "", 200
+    
+    return "", 200
 
 @app.route("/vton/fetch_url/", methods = ['POST'])
 def vton_fetch_url():
@@ -1626,4 +1631,4 @@ def customer_logged_in(user_id):
     return True
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
