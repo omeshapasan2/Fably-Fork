@@ -5,6 +5,7 @@ import 'dart:typed_data'; // For handling image bytes
 import 'package:fably/utils/globals.dart';
 import 'package:fably/utils/requests.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 
 class VirtualTryOnResultPage extends StatefulWidget {
   final File? inputImage;
@@ -81,6 +82,32 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
     }
   }
 
+  String compressImageToBase64(Uint8List imageBytes,
+      {/*int maxWidth = 800, int maxHeight = 800,*/ int quality = 85}) {
+    try {
+      // Decode the image bytes
+      img.Image? image = img.decodeImage(imageBytes);
+      if (image == null) {
+        throw Exception('Invalid image data');
+      }
+
+      // Resize the image if it exceeds the max dimensions
+      /*if (image.width > maxWidth || image.height > maxHeight) {
+        image = img.copyResize(image, width: maxWidth, height: maxHeight);
+      }*/
+
+      // Compress the image with the specified quality
+      final compressedImageBytes = img.encodeJpg(image, quality: quality);
+
+      // Convert the compressed image to Base64
+      final base64String = base64Encode(compressedImageBytes);
+
+      return base64String;
+    } catch (e) {
+      throw Exception('Error compressing and encoding image: $e');
+    }
+  }
+
   Future<void> _fetchTryOnResult() async {
     if (widget.inputImage == null) {
       setState(() {
@@ -119,6 +146,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
 
     // Convert image to Base64
     final bytes = await imageFile.readAsBytes();
+    //final base64Image = compressImageToBase64(bytes);
     final base64Image = base64Encode(bytes);
     String debugMode = "$tryOnDebugMode";
     print("debugMode = $debugMode");

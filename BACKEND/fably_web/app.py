@@ -27,7 +27,7 @@ from flask_pymongo import PyMongo
 from flask_cors import CORS
 import secrets
 import hmac
-from PIL import Image
+from PIL import Image, ExifTags
 #import logging
 
 
@@ -1379,6 +1379,11 @@ def virtual_try_on_endpoint_two():
         except Exception as e:
             return 'Invalid image data', 400
         
+        image = handle_image_orientation(image)
+
+        if image==None:
+            return 'Error orienting image', 500
+        
         root_folder = f"try_ons/{session['user_id']}"
 
         folder_path = Path(root_folder+"/inputs")
@@ -1398,8 +1403,10 @@ def virtual_try_on_endpoint_two():
             print(f"Folder already exists: {folder_path}")
 
         # Save the image file (optional)
-        image.save(f'{root_folder}/inputs/person.png', format="PNG")
+        image.save(f'{root_folder}/inputs/person.jpg', format="JPEG")
         # fetched person image and added to the inputs folder
+        compress_image(f'{root_folder}/inputs/person.jpg', f'{root_folder}/inputs/person.jpg')
+        # Compress image
 
         item = items_collection.find_one({'_id': ObjectId(item_id)})
 
@@ -1422,7 +1429,7 @@ def virtual_try_on_endpoint_two():
 
         else:
             
-            person_public_id = upload_image_to_cloudinary(f'{root_folder}/inputs/person.png')
+            person_public_id = upload_image_to_cloudinary(f'{root_folder}/inputs/person.jpg')
             person_url = generate_secure_cloudinary_url(person_public_id)
             webhook_url = url_for('vton_webhook', _external=True)
             print(f"webhook_url: {webhook_url}")
@@ -1441,6 +1448,10 @@ def virtual_try_on_endpoint_two():
         user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
 
         if "virtualTryOns" not in user.keys():
+            try:
+                delete_cloudinary_image(user["virtualTryOns"][item_id])
+            except Exception as e:
+                print(e)
             user["virtualTryOns"] = {}
         
         if item_id in user["virtualTryOns"].keys():
@@ -1459,7 +1470,7 @@ def virtual_try_on_endpoint_two():
             {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
         )
         try:
-            os.remove(f'{root_folder}/inputs/person.png')
+            os.remove(f'{root_folder}/inputs/person.jpg')
         except Exception as e:
             print(e)
         
@@ -1536,7 +1547,7 @@ def vton_fetch_url():
             vton_change['url'] = vton_item['url']
 
             vtons_collection.update_one(
-                {'vtonId': result['id']},
+                {'vtonId': result['vton_id']},
                 {'$set': vton_change}
             )
 
@@ -1559,7 +1570,9 @@ def vton_fetch_url():
             {'_id': ObjectId(session["user_id"])},  # Query to find the user
             {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
         )
-
+        print(vton_url)
+        if not vton_url:
+            vton_url=""
         return vton_url, 200
 
     except Exception as e:
@@ -1605,7 +1618,10 @@ def generate_secure_cloudinary_url(public_id):
 
 def delete_cloudinary_image(tryOnData):
     #url = tryOnData['url']
-    public_id = tryOnData['publicId']
+    if 'publicId' in tryOnData.keys():
+        public_id = tryOnData['publicId']
+    else:
+        public_id = tryOnData['personImage']
     #public_id = url.split("/")[-1].split(".")[0]  # Extract public ID
     #delete_resources_by_prefix(public_id)
     response = cloudinary.uploader.destroy(public_id, type="authenticated")  # Delete the exact resource
@@ -1647,6 +1663,79 @@ def customer_logged_in(user_id):
         if "user_id" not in session.keys() or user_id!=session["user_id"]:
             return False
     return True
+
+def compress_image(input_path, output_path, quality=85, max_width=1000, max_height=1280):
+    try:
+        # Open the image
+        image = Image.open(input_path)
+
+        # Handle EXIF orientation (ensure correct orientation)
+        try:
+            for orientation in ExifTags.TAGS.keys():
+                if ExifTags.TAGS[orientation] == 'Orientation':
+                    break
+            exif = image._getexif()
+            if exif is not None:
+                orientation_value = exif.get(orientation, 1)
+                if orientation_value == 3:
+                    image = image.rotate(180, expand=True)
+                elif orientation_value == 6:
+                    image = image.rotate(270, expand=True)
+                elif orientation_value == 8:
+                    image = image.rotate(90, expand=True)
+        except (AttributeError, KeyError, IndexError):
+            # EXIF data not present or couldn't be processed
+            pass
+
+        # Resize image if necessary
+        if max_width and max_height:
+            image.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
+
+        # Convert to RGB if the image is in a different mode (e.g., "P" or "RGBA")
+        if image.mode in ("RGBA", "P"):
+            image = image.convert("RGB")
+
+        # Save the compressed image as JPG
+        image.save(output_path, format="JPEG", optimize=True, quality=quality)
+        print(f"Image saved and compressed successfully at: {output_path}")
+
+    except Exception as e:
+        print(f"Error compressing image: {e}")
+
+def handle_image_orientation(image):
+    """
+    Adjusts the orientation of a PIL.Image object based on its EXIF data.
+    
+    Parameters:
+        image (PIL.Image.Image): The image to process.
+    
+    Returns:
+        PIL.Image.Image: The correctly oriented image.
+    """
+    try:
+        # Handle EXIF orientation
+        try:
+            for orientation in ExifTags.TAGS.keys():
+                if ExifTags.TAGS[orientation] == 'Orientation':
+                    break
+            exif = image._getexif()
+            if exif is not None:
+                orientation_value = exif.get(orientation, 1)
+                if orientation_value == 3:
+                    image = image.rotate(180, expand=True)
+                elif orientation_value == 6:
+                    image = image.rotate(270, expand=True)
+                elif orientation_value == 8:
+                    image = image.rotate(90, expand=True)
+        except (AttributeError, KeyError, IndexError):
+            # EXIF data not present or couldn't be processed
+            pass
+
+        return image
+
+    except Exception as e:
+        print(f"Error handling image orientation: {e}")
+        return None
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
