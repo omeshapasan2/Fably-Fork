@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data'; // For handling image bytes
@@ -20,11 +21,64 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
   bool isLoading = false;
   String? errorMessage;
   String image_url = "";
+  String vton_id = "";
+  String loadingMessage = 'Uploading Images';
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _fetchTryOnResult();
+  }
+
+  void _showMessage(String message) {
+    print(message);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // start sending post requests
+  void startSendingPostRequests(Duration interval) {
+    _timer = Timer.periodic(interval, (Timer timer) async {
+      await sendPostRequest();
+    });
+  }
+
+  // Stop sending requests
+  void stopSendingPostRequests() {
+    _timer?.cancel();
+  }
+
+  // The POST request logic
+  Future<void> sendPostRequest() async {
+    final requests = BackendRequests();
+
+    try {
+      final response = await requests.postRequest("vton/fetch_url/", body: {
+        "vton_id": vton_id,
+        "item_id": widget.id,
+      });
+
+      if (response.statusCode == 200) {
+        if (response.body == "processing") {
+          setState(() {
+            loadingMessage = "Generating Image. This might take a few minuites";
+          });
+        } else {
+          setState(() {
+            image_url = response.body;
+            isLoading = false;
+            loadingMessage = "Image generated successfully";
+          });
+          stopSendingPostRequests();
+        }
+        _showMessage('POST request successful: ${response.body}');
+      } else {
+        print('Failed to send POST request: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error occurred while sending POST request: $error');
+    }
   }
 
   Future<void> _fetchTryOnResult() async {
@@ -40,7 +94,6 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
       errorMessage = null;
     });
 
-
     // temporarily display the input image as the result image
     widget.inputImage!.readAsBytes().then((bytes) {
       setState(() {
@@ -54,7 +107,6 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
 
     // --------------------------------------------------------
 
-    
     final imageFile = widget.inputImage;
     final requests = BackendRequests();
 
@@ -80,25 +132,30 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
 
     // Send POST request
     final response = await requests.postRequest(
-      'virtual_try_on',
+      'virtual_try_on_v2',
       body: payload,
     );
 
     // Handle the response
-    if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload successful: ${response.body}')),
-      );
-
-      image_url = response.body;
+    if (response.statusCode == 201) {
+      // Debug Mode
+      _showMessage('Upload successful: ${response.body}');
+      setState(() {
+        image_url = response.body;
+      });
+    } else if (response.statusCode == 200) {
+      _showMessage('Upload successful: ${response.body}');
+      setState(() {
+        vton_id = response.body;
+      });
+      startSendingPostRequests(Duration(seconds: 1));
+      //image_url = response.body;
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: ${response.body}')),
-      );
+      _showMessage('Upload failed: ${response.body}');
     }
-    setState(() {
+    /*setState(() {
       isLoading = false;
-    });
+    });*/
   }
 
   @override
@@ -121,37 +178,33 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Center(
-          child:Column(
-            mainAxisAlignment: MainAxisAlignment.center, 
-            children:isLoading
-            ? <Widget>[
-                // Loading Screen
-                CircularProgressIndicator(),
-                const SizedBox(height: 20),
-                Text(
-                  'Generating Image. This might take a few minuites',
-                  textAlign: TextAlign.center, 
-                  style: const TextStyle(
-                    fontSize: 20 /*, fontWeight: FontWeight.bold*/),
-                ),
-              ]
-              
-            : errorMessage != null
-              ? <Widget>[
-                  Text(
-                    errorMessage!,
-                    style: TextStyle(color: Colors.red),
-                  )
-                ]
-              : image_url != ""
-                ? <Widget>[
-                    Image.network(image_url) // Display the received image
-                  ]
-                  
-                : <Widget>[
-                    Text('No result to display.')
-                  ]
-          ),
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: isLoading
+                  ? <Widget>[
+                      // Loading Screen
+                      CircularProgressIndicator(),
+                      const SizedBox(height: 20),
+                      Text(
+                        loadingMessage,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 20 /*, fontWeight: FontWeight.bold*/),
+                      ),
+                    ]
+                  : errorMessage != null
+                      ? <Widget>[
+                          Text(
+                            errorMessage!,
+                            style: TextStyle(color: Colors.red),
+                          )
+                        ]
+                      : image_url != ""
+                          ? <Widget>[
+                              Image.network(
+                                  image_url) // Display the received image
+                            ]
+                          : <Widget>[Text('No result to display.')]),
         ),
       ),
     );

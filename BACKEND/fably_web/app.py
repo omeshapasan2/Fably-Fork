@@ -32,6 +32,7 @@ from PIL import Image
 
 import send_email as mail
 import virtual_try_on
+import vton
 
 reset_tokens = {}
 
@@ -63,6 +64,7 @@ items_collection = db.items  # Item info
 checkout_collection = db.checkouts  # Checkout data
 
 orders_collection = db['orders']
+vtons_collection = db['vtons']
 
 customers_collection = db.customers
 
@@ -1340,6 +1342,202 @@ def virtual_try_on_endpoint():
         print('Error: ' + str(e))
         return 'Error: ' + str(e), 500
 
+@app.route('/virtual_try_on_v2', methods = ['POST'])
+def virtual_try_on_endpoint_two():
+    # Save the original configuration
+    
+    cloudinary.config(
+        cloud_name=config.CLOUDINARY_CLOUD_NAME,
+        api_key=config.CLOUDINARY_API_KEY,
+        api_secret=config.CLOUDINARY_API_SECRET
+    )
+
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+
+    if not customer_logged_in(""):
+        return "Unauthorised!", 400
+    
+    try:
+        # Get the ID from the form data
+        item_id = request.get_json()['item_id']
+        if not item_id:
+            return 'Item ID is required', 400
+
+        # Get the Base64-encoded image
+        image_data = request.get_json()['image']
+        if not image_data:
+            return 'Error: Image file is required', 400
+        
+        # Decode the Base64 image
+        try:
+            image = Image.open(BytesIO(base64.b64decode(image_data)))
+        except Exception as e:
+            return 'Invalid image data', 400
+        
+        root_folder = f"try_ons/{session['user_id']}"
+
+        folder_path = Path(root_folder+"/inputs")
+
+        if not folder_path.exists():
+            folder_path.mkdir(parents=True, exist_ok=True)
+            print(f"Folder created: {folder_path}")
+        else:
+            print(f"Folder already exists: {folder_path}")
+
+        folder_path = Path(root_folder+"/outputs")
+
+        if not folder_path.exists():
+            folder_path.mkdir(parents=True, exist_ok=True)
+            print(f"Folder created: {folder_path}")
+        else:
+            print(f"Folder already exists: {folder_path}")
+
+        # Save the image file (optional)
+        image.save(f'{root_folder}/inputs/person.png', format="PNG")
+        # fetched person image and added to the inputs folder
+
+        item = items_collection.find_one({'_id': ObjectId(item_id)})
+
+        cloth_url = item['photos'][0]
+
+        # virtual try on processing starts here
+
+        # temporary code to copy the person image to the outputs folder
+        debug = False
+        if 'debug' in request.get_json():
+            if request.get_json()['debug'].lower() == 'true':
+                print("Debug mode")
+                debug = True
+
+        if debug:
+            image.save(f'{root_folder}/outputs/output.png', format="PNG")
+            return "https://cdn.fashn.ai/5b4e2f22-dd00-4499-8d85-d8ff5e0643ec/output_0.png", 201
+
+        else:
+            
+            person_public_id = upload_image_to_cloudinary(f'{root_folder}/inputs/person.png')
+            person_url = generate_secure_cloudinary_url(person_public_id)
+            webhook_url = url_for('vton_webhook', _external=True)
+            print(f"webhook_url: {webhook_url}")
+            vton_id = vton.tryOn(cloth_url, person_url, webhook_url)
+
+            if vton_id == "Error":
+                import traceback
+                print(traceback.format_exc())
+                return vton_id, 500
+
+            # Check for try on result
+            vton_record = {'vtonId': vton_id, 'status':'processing'}
+            vtons_collection.insert_one(vton_record)
+
+        #||| virtual try on processing ends here with the output image saved in the outputs folder
+        user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+
+        if "virtualTryOns" not in user.keys():
+            user["virtualTryOns"] = {}
+        
+        if item_id in user["virtualTryOns"].keys():
+            user["virtualTryOns"][item_id] = {}
+            print("Deleted previous image")
+        user["virtualTryOns"][item_id] = {}
+        
+        user["virtualTryOns"][item_id]["vtonId"] = vton_id
+        user["virtualTryOns"][item_id]["personImage"] = person_public_id
+        user["virtualTryOns"][item_id]["status"] = "processing"
+
+        print("Generating new image:", user["virtualTryOns"][item_id]["vtonId"])
+
+        customers_collection.update_one(
+            {'_id': ObjectId(session["user_id"])},  # Query to find the user
+            {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
+        )
+        try:
+            os.remove(f'{root_folder}/inputs/person.png')
+        except Exception as e:
+            print(e)
+        
+        #||| uploaded the image to cloudinary
+        
+        return vton_id
+        #return f'Image and ID received successfully | id : {item_id} ', 200
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        print('Error: ' + str(e))
+        return 'Error: ' + str(e), 500
+
+@app.route("/vton/webhook/", methods = ['POST'])
+def vton_webhook():
+    try:
+        result = request.get_json()
+
+        if result['error'] != None:
+            print("Error")
+            print(result)
+            print("An Error occured while generating the image")
+            return
+        
+        vton_item = vtons_collection.find_one({'vtonId': result['id']})
+        vton_item['url'] = result['output'][0]
+
+        vtons_collection.update_one(
+            {'vtonId': result['id']},
+            {'$set': {'url': vton_item['url'], 'status': 'completed'}}
+        )
+    
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        print('Error: ' + str(e))
+
+@app.route("/vton/fetch_url/", methods = ['POST'])
+def vton_fetch_url():
+    try:
+
+        if not verify_csrf(request.headers.get('X-CSRFToken')):
+            return "Unauthorised CSRF!", 400
+
+        if not customer_logged_in(""):
+            return "Unauthorised!", 400
+        
+
+        result = request.get_json()
+
+        vton_id = result['vton_id']
+        item_id = result['item_id']
+        
+        try:
+            vton_item = vtons_collection.find_one({'vtonId': result['vtonId']})
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return "Error", 500
+        
+        if (vton_item["status"]=="processing"):
+            return "processing", 200
+
+        # get VTON url
+        vton_url = vton_item['url']
+
+        # Add url to the user record
+        user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+        
+        user["virtualTryOns"][item_id]["url"] = vton_url
+        user["virtualTryOns"][item_id]["status"] = "completed"
+
+
+        customers_collection.update_one(
+            {'_id': ObjectId(session["user_id"])},  # Query to find the user
+            {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
+        )
+
+        return vton_url, 200
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        print('Error: ' + str(e))
 
 def fetch_image_from_cloudinary(url):
     """
