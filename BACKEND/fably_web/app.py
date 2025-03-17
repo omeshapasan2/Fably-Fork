@@ -1531,6 +1531,15 @@ def vton_fetch_url():
             vton_item['status']='completed'
             vton_item['url']=_url
 
+            vton_change = {}
+            vton_change['status'] = vton_item['status']
+            vton_change['url'] = vton_item['url']
+
+            vtons_collection.update_one(
+                {'vtonId': result['id']},
+                {'$set': vton_change}
+            )
+
         # ALTERNATE SOLUTION END
 
         if (vton_item["status"]=="processing"):
