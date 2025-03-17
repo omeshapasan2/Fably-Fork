@@ -1411,7 +1411,9 @@ def virtual_try_on_endpoint_two():
                 debug = True
 
         if debug:
-            image.save(f'{root_folder}/outputs/output.png', format="PNG")
+            #image.save(f'{root_folder}/outputs/output.png', format="PNG")
+            webhook_url = url_for('vton_webhook', _external=True)
+            print(f"webhook_url: {webhook_url}")
             return "https://cdn.fashn.ai/5b4e2f22-dd00-4499-8d85-d8ff5e0643ec/output_0.png", 201
 
         else:

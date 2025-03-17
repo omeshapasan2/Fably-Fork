@@ -72,7 +72,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
           });
           stopSendingPostRequests();
         }
-        _showMessage('POST request successful: ${response.body}');
+        //_showMessage('POST request successful: ${response.body}');
       } else {
         print('Failed to send POST request: ${response.statusCode}');
       }
