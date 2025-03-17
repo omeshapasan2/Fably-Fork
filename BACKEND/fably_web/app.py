@@ -28,6 +28,8 @@ from flask_cors import CORS
 import secrets
 import hmac
 from PIL import Image
+import logging
+
 
 
 import send_email as mail
@@ -55,6 +57,7 @@ app.config['SECRET_KEY'] = config.SECRET_KEY
 csrf = CSRFProtect(app)
 app.config['DEBUG'] = True
 app.config['WTF_CSRF_ENABLED'] = False
+logging.basicConfig(level=logging.DEBUG)
 
 # MongoDB setup
 client = MongoClient(config.MONGO_URI)
@@ -1421,7 +1424,7 @@ def virtual_try_on_endpoint_two():
             person_public_id = upload_image_to_cloudinary(f'{root_folder}/inputs/person.png')
             person_url = generate_secure_cloudinary_url(person_public_id)
             webhook_url = url_for('vton_webhook', _external=True)
-            print(f"webhook_url: {webhook_url}")
+            logging.debug(f"webhook_url: {webhook_url}")
             vton_id = vton.tryOn(cloth_url, person_url, webhook_url)
 
             if vton_id == "Error":
@@ -1448,7 +1451,7 @@ def virtual_try_on_endpoint_two():
         user["virtualTryOns"][item_id]["personImage"] = person_public_id
         user["virtualTryOns"][item_id]["status"] = "processing"
 
-        print("Generating new image:", user["virtualTryOns"][item_id]["vtonId"])
+        logging.debug("Generating new image:", user["virtualTryOns"][item_id]["vtonId"])
 
         customers_collection.update_one(
             {'_id': ObjectId(session["user_id"])},  # Query to find the user

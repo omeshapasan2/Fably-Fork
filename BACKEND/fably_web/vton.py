@@ -1,9 +1,12 @@
 import requests
 import json
 import config
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 def tryOn(garment_url, person_url, webhook):
-    print(config.FASHN_API_KEY)
+    logging.debug(config.FASHN_API_KEY)
 
     try:
         response = requests.post(
@@ -20,20 +23,20 @@ def tryOn(garment_url, person_url, webhook):
 
         try:
             json_response = json.loads(response.text)
-            print(json_response)
+            logging.debug(json_response)
         except json.JSONDecodeError:
-            print("Failed to decode JSON:", response.text)
+            logging.debug("Failed to decode JSON:", response.text)
             return "Error"
 
-        print(response.text)
+        logging.debug(response.text)
         if json_response['error'] != None:
             return "Error"
-        print("Success")
-        print(json_response['error'])
+        logging.debug("Success")
+        logging.debug(json_response['error'])
         return json_response['id']
     
     except Exception as e:
-        print(e)
+        logging.debug(e)
         return "Error"
 
 if __name__ == '__main__':
