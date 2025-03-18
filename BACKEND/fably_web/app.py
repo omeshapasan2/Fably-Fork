@@ -28,6 +28,7 @@ from flask_cors import CORS
 import secrets
 import hmac
 from PIL import Image, ExifTags
+import threading
 #import logging
 
 
@@ -38,6 +39,7 @@ import vton
 import check_url
 
 reset_tokens = {}
+vton_lock = threading.Lock()
 cloudinary_credentials = [
     config.CLOUDINARY_CLOUD_NAME,
     config.CLOUDINARY_API_KEY,
@@ -1409,7 +1411,7 @@ def vton_history():
             vton[product_id]['clothPhoto'] = item["photos"][0]
             vton[product_id]['personPhoto'] = generate_secure_cloudinary_url(vton[product_id]['personImage'])
             vton[product_id]['imageUrl'] = generate_secure_cloudinary_url(vton[product_id]['vtonPhoto'], cloudCredentials=cloudinary2_credentials)
-            print("Vton:", json.dumps(vton, indent=4))
+            #print("Vton:", json.dumps(vton, indent=4))
 
             #TEST
             #vton[product_id]['status'] = "processing"
@@ -1613,105 +1615,107 @@ def vton_fetch_url():
 
         vton_id = result['vton_id']
         item_id = result['item_id']
-        
-        try:
-            vton_item = vtons_collection.find_one({'vtonId': result['vton_id']})
-        except Exception as e:
-            import traceback
-            print(traceback.format_exc())
-            return "Error", 500
-        
-        # ALTERNATE SOLUTION
-        _url = f"https://cdn.fashn.ai/{result['vton_id']}/output_0.png"
-        user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
-        if user["virtualTryOns"][item_id]['status']=='completed':
-            print("already completed url")
-            return_url = generate_secure_cloudinary_url(user["virtualTryOns"][item_id]["vtonPhoto"], cloudCredentials=cloudinary2_credentials)
-            print(return_url)
-            return return_url, 200
-        if (check_url.check_image(_url)):
-            vton_item['status']='completed'
-            vton_item['url']=_url
+        with vton_lock:
+            try:
+                vton_item = vtons_collection.find_one({'vtonId': result['vton_id']})
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                return "Error", 500
+            
+            # ALTERNATE SOLUTION
+            _url = f"https://cdn.fashn.ai/{result['vton_id']}/output_0.png"
+            user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+            if vton_item['status']=='completed':
+                if user["virtualTryOns"][item_id]['status']=='completed':
+                    print("already completed url")
+                    return_url = generate_secure_cloudinary_url(user["virtualTryOns"][item_id]["vtonPhoto"], cloudCredentials=cloudinary2_credentials)
+                    print(return_url)
+                    return return_url, 200
+                return "fetching", 403
+            if (check_url.check_image(_url)):
+                vton_item['status']='completed'
+                vton_item['url']=_url
 
-            vton_change = {}
-            vton_change['status'] = vton_item['status']
-            vton_change['url'] = vton_item['url']
+                vton_change = {}
+                vton_change['status'] = vton_item['status']
+                vton_change['url'] = vton_item['url']
 
-            vtons_collection.update_one(
-                {'vtonId': result['vton_id']},
-                {'$set': vton_change}
+                vtons_collection.update_one(
+                    {'vtonId': result['vton_id']},
+                    {'$set': vton_change}
+                )
+
+            # ALTERNATE SOLUTION END
+
+            if (vton_item["status"]=="processing"):
+                return "processing", 200
+
+            # get VTON url
+            vton_url = vton_item['url']
+
+            root_folder = f"try_ons/{session['user_id']}"
+
+            folder_path=Path(root_folder+"/outputs")
+
+            if not folder_path.exists():
+                folder_path.mkdir(parents=True, exist_ok=True)
+                print(f"Folder created: {folder_path}")
+            else:
+                print(f"Folder already exists: {folder_path}")
+            
+
+            # Add url to the user record
+            user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+            
+            # download image from FASHN
+            download_image(vton_url, f'{root_folder}/outputs/output.png')
+            # Compress image
+            compress_image(f'{root_folder}/outputs/output.png', f'{root_folder}/outputs/output.jpg')
+            # delete previous image in cloudinary
+            try:
+                delete_cloudinary_image(
+                    user["virtualTryOns"][item_id]["vtonPhoto"], 
+                    cloudCredentials=cloudinary2_credentials
+                )
+            except Exception as e:
+                print(e)
+            # Upload to cloudinary and get publicId
+            vton_cloudinary_id = upload_image_to_cloudinary(
+                f'{root_folder}/outputs/output.jpg', 
+                folder="vton_result", 
+                cloudCredentials=cloudinary2_credentials
             )
 
-        # ALTERNATE SOLUTION END
+            try:
+                os.remove(f'{root_folder}/outputs/output.png')
+            except Exception as e:
+                print(e)
+            try:
+                os.remove(f'{root_folder}/outputs/output.jpg')
+            except Exception as e:
+                print(e)
+            
 
-        if (vton_item["status"]=="processing"):
-            return "processing", 200
+            # save publicId to vtonPhoto
+            user["virtualTryOns"][item_id]["vtonPhoto"] = vton_cloudinary_id
 
-        # get VTON url
-        vton_url = vton_item['url']
+            user["virtualTryOns"][item_id]["url"] = vton_url
+            user["virtualTryOns"][item_id]["status"] = "completed"
 
-        root_folder = f"try_ons/{session['user_id']}"
-
-        folder_path=Path(root_folder+"/outputs")
-
-        if not folder_path.exists():
-            folder_path.mkdir(parents=True, exist_ok=True)
-            print(f"Folder created: {folder_path}")
-        else:
-            print(f"Folder already exists: {folder_path}")
-        
-
-        # Add url to the user record
-        user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
-        
-        # download image from FASHN
-        download_image(vton_url, f'{root_folder}/outputs/output.png')
-        # Compress image
-        compress_image(f'{root_folder}/outputs/output.png', f'{root_folder}/outputs/output.jpg')
-        # delete previous image in cloudinary
-        try:
-            delete_cloudinary_image(
+            customers_collection.update_one(
+                {'_id': ObjectId(session["user_id"])},  # Query to find the user
+                {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
+            )
+            return_url = generate_secure_cloudinary_url(
                 user["virtualTryOns"][item_id]["vtonPhoto"], 
                 cloudCredentials=cloudinary2_credentials
             )
-        except Exception as e:
-            print(e)
-        # Upload to cloudinary and get publicId
-        vton_cloudinary_id = upload_image_to_cloudinary(
-            f'{root_folder}/outputs/output.jpg', 
-            folder="vton_result", 
-            cloudCredentials=cloudinary2_credentials
-        )
-
-        try:
-            os.remove(f'{root_folder}/outputs/output.png')
-        except Exception as e:
-            print(e)
-        try:
-            os.remove(f'{root_folder}/outputs/output.jpg')
-        except Exception as e:
-            print(e)
-        
-
-        # save publicId to vtonPhoto
-        user["virtualTryOns"][item_id]["vtonPhoto"] = vton_cloudinary_id
-
-        user["virtualTryOns"][item_id]["url"] = vton_url
-        user["virtualTryOns"][item_id]["status"] = "completed"
-
-        customers_collection.update_one(
-            {'_id': ObjectId(session["user_id"])},  # Query to find the user
-            {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
-        )
-        return_url = generate_secure_cloudinary_url(
-            user["virtualTryOns"][item_id]["vtonPhoto"], 
-            cloudCredentials=cloudinary2_credentials
-        )
-        print(vton_url)
-        print(return_url)
-        if not return_url:
-            return_url=""
-        return return_url, 200
+            print(vton_url)
+            print(return_url)
+            if not return_url:
+                return_url=""
+            return return_url, 200
 
     except Exception as e:
         import traceback
