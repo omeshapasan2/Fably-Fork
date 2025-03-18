@@ -38,6 +38,17 @@ import vton
 import check_url
 
 reset_tokens = {}
+cloudinary_credentials = [
+    config.CLOUDINARY_CLOUD_NAME,
+    config.CLOUDINARY_API_KEY,
+    config.CLOUDINARY_API_SECRET
+]
+
+cloudinary2_credentials = [
+    config.CLOUDINARY_CLOUD_NAME2,
+    config.CLOUDINARY_API_KEY2,
+    config.CLOUDINARY_API_SECRET2
+]
 
 def custom_cors_origin(origin):
     # Allow all origins
@@ -643,6 +654,13 @@ def get_wishlist_items(user_id):
                 item = user_wishlist[i]
                 try:
                     item_product = items_collection.find_one({'_id': ObjectId(item)})# product info corrosponding to id
+                    if item_product==None:
+                        user_wishlist.pop(i)
+                        result = customers_collection.update_one(
+                            {"_id": ObjectId(session["user_id"])},  # Filter the user by id
+                            {"$pull": {"wishlist": item}}  # Remove the item from the cart array
+                        )
+                        continue
                 except Exception as e:
                     print("item_produc fetching exception",e)
                     result = customers_collection.update_one(
@@ -1302,7 +1320,7 @@ def virtual_try_on_endpoint():
         
         if item_id in user["virtualTryOns"].keys():
             try:
-                delete_cloudinary_image(user["virtualTryOns"][item_id])
+                delete_cloudinary_image(user["virtualTryOns"][item_id]['publicId'])
             except Exception as e:
                 print(e)
             user["virtualTryOns"][item_id] = {}
@@ -1370,17 +1388,28 @@ def vton_history():
         for product_id in vton.keys():
             try:
                 item = items_collection.find_one({'_id': ObjectId(product_id)})
+                if item==None:
+                    personImage = user["virtualTryOns"][product_id]['personImage']
+                    vtonPhoto = user["virtualTryOns"][product_id]['vtonPhoto']
+                    delete_cloudinary_image(personImage)
+                    delete_cloudinary_image(vtonPhoto, cloudCredentials=cloudinary2_credentials)
+                    
+                    result = customers_collection.update_one(
+                        {"_id": ObjectId(session["user_id"])},  # Filter the user by id
+                        {"$unset": {f"virtualTryOns.{product_id}": ""}}  # Remove the item from the cart array
+                    )
+                    continue
             except Exception as e:
                 import traceback
                 print(traceback.format_exc())
                 print('Error: ' + str(e))
                 continue
-            #print("Vton:", json.dumps(vton, indent=4))
             vton[product_id]['name'] = item["name"]
             vton[product_id]['itemId'] = product_id
             vton[product_id]['clothPhoto'] = item["photos"][0]
             vton[product_id]['personPhoto'] = generate_secure_cloudinary_url(vton[product_id]['personImage'])
-            vton[product_id]['imageUrl'] = f"https://cdn.fashn.ai/{vton[product_id]['vtonId']}/output_0.png"
+            vton[product_id]['imageUrl'] = generate_secure_cloudinary_url(vton[product_id]['vtonPhoto'], cloudCredentials=cloudinary2_credentials)
+            print("Vton:", json.dumps(vton, indent=4))
 
             #TEST
             #vton[product_id]['status'] = "processing"
@@ -1501,7 +1530,11 @@ def virtual_try_on_endpoint_two():
 
         if "virtualTryOns" not in user.keys():
             try:
-                delete_cloudinary_image(user["virtualTryOns"][item_id])
+                delete_cloudinary_image(user["virtualTryOns"][item_id]['personImage'])
+            except Exception as e:
+                print(e)
+            try:
+                delete_cloudinary_image(user["virtualTryOns"][item_id]['vtonPhoto'])
             except Exception as e:
                 print(e)
             user["virtualTryOns"] = {}
@@ -1590,6 +1623,10 @@ def vton_fetch_url():
         
         # ALTERNATE SOLUTION
         _url = f"https://cdn.fashn.ai/{result['vton_id']}/output_0.png"
+        user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+        if user["virtualTryOns"][item_id]['status']=='completed':
+            return_url = generate_secure_cloudinary_url(user["virtualTryOns"][item_id]["vtonPhoto"], cloudCredentials=cloudinary2_credentials)
+            return return_url, 200
         if (check_url.check_image(_url)):
             vton_item['status']='completed'
             vton_item['url']=_url
@@ -1611,26 +1648,66 @@ def vton_fetch_url():
         # get VTON url
         vton_url = vton_item['url']
 
+        root_folder = f"try_ons/{session['user_id']}"
+        
+
         # Add url to the user record
         user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
         
+        # download image from FASHN
+        download_image(vton_url, f'{root_folder}/outputs/output.png')
+        # Compress image
+        compress_image(f'{root_folder}/outputs/output.png', f'{root_folder}/outputs/output.jpg')
+        # delete previous image in cloudinary
+        try:
+            delete_cloudinary_image(
+                user["virtualTryOns"][item_id]["vtonPhoto"], 
+                cloudCredentials=cloudinary2_credentials
+            )
+        except Exception as e:
+            print(e)
+        # Upload to cloudinary and get publicId
+        vton_cloudinary_id = upload_image_to_cloudinary(
+            f'{root_folder}/outputs/output.jpg', 
+            folder="vton_result", 
+            cloudCredentials=cloudinary2_credentials
+        )
+
+        try:
+            os.remove(f'{root_folder}/outputs/output.png')
+        except Exception as e:
+            print(e)
+        try:
+            os.remove(f'{root_folder}/outputs/output.jpg')
+        except Exception as e:
+            print(e)
+        
+
+        # save publicId to vtonPhoto
+        user["virtualTryOns"][item_id]["vtonPhoto"] = vton_cloudinary_id
+
         user["virtualTryOns"][item_id]["url"] = vton_url
         user["virtualTryOns"][item_id]["status"] = "completed"
-
 
         customers_collection.update_one(
             {'_id': ObjectId(session["user_id"])},  # Query to find the user
             {'$set': {'virtualTryOns': user["virtualTryOns"]}}  # Update the `virtualTryOns` field
         )
+        return_url = generate_secure_cloudinary_url(
+            user["virtualTryOns"][item_id]["vtonPhoto"], 
+            cloudCredentials=cloudinary2_credentials
+        )
         print(vton_url)
-        if not vton_url:
-            vton_url=""
-        return vton_url, 200
+        print(return_url)
+        if not return_url:
+            return_url=""
+        return return_url, 200
 
     except Exception as e:
         import traceback
         print(traceback.format_exc())
         print('Error: ' + str(e))
+        return "Error", 500
 
 def fetch_image_from_cloudinary(url):
     """
@@ -1658,28 +1735,33 @@ def fetch_image_from_cloudinary(url):
         print(f"Error fetching the image: {e}")
         return None
 
-def generate_secure_cloudinary_url(public_id):
+def generate_secure_cloudinary_url(public_id, cloudCredentials = cloudinary_credentials):
     expiration = int(time.time()) + 3600  # URL valid for 1 hour
     url, _ = cloudinary_url(
         public_id,
         type='authenticated',  # For authenticated resources
         sign_url=True,
-        expires_at=expiration  # Optional: Expiration timestamp
+        expires_at=expiration,  # Optional: Expiration timestamp
+        cloud_name=cloudCredentials[0],
+        api_key=cloudCredentials[1],
+        api_secret=cloudCredentials[2]
     )
     return url
 
-def delete_cloudinary_image(tryOnData):
-    #url = tryOnData['url']
-    if 'publicId' in tryOnData.keys():
-        public_id = tryOnData['publicId']
-    else:
-        public_id = tryOnData['personImage']
+def delete_cloudinary_image(publicId, cloudCredentials = cloudinary_credentials):
+    public_id = publicId
     #public_id = url.split("/")[-1].split(".")[0]  # Extract public ID
     #delete_resources_by_prefix(public_id)
-    response = cloudinary.uploader.destroy(public_id, type="authenticated")  # Delete the exact resource
+    response = cloudinary.uploader.destroy(
+        public_id, 
+        type="authenticated",
+        cloud_name=cloudCredentials[0],
+        api_key=cloudCredentials[1],
+        api_secret=cloudCredentials[2]
+        )  # Delete the exact resource
     print(f"Deleted image with public ID: {public_id}, Response: {response}")
 
-def upload_image_to_cloudinary(image_path):
+def upload_image_to_cloudinary(image_path, folder="", cloudCredentials = cloudinary_credentials):
     """
     Uploads an image to Cloudinary.
     """
@@ -1687,7 +1769,14 @@ def upload_image_to_cloudinary(image_path):
         # Open the image file in binary mode
         with open(image_path, "rb") as image_file:
             # Upload the image to Cloudinary
-            upload_result = upload(image_file, type='authenticated')
+            upload_result = upload(
+                image_file, 
+                type='authenticated',
+                folder="",
+                cloud_name=cloudCredentials[0],
+                api_key=cloudCredentials[1],
+                api_secret=cloudCredentials[2]
+                )
         
         # Return the secure URL of the uploaded image
         return upload_result['public_id']
@@ -1753,6 +1842,28 @@ def compress_image(input_path, output_path, quality=85, max_width=1000, max_heig
 
     except Exception as e:
         print(f"Error compressing image: {e}")
+
+def download_image(image_url, save_path):
+    """
+    Downloads an image from a given URL and saves it to the specified path.
+
+    :param image_url: The URL of the image to download.
+    :param save_path: The local path where the image will be saved.
+    """
+    try:
+        # Send a GET request to the image URL
+        response = requests.get(image_url, stream=True)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        
+        # Write the image content to a file
+        with open(save_path, "wb") as file:
+            for chunk in response.iter_content(1024):
+                file.write(chunk)
+        
+        print(f"Image downloaded and saved to {save_path}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading image: {e}")
+
 
 def handle_image_orientation(image):
     """
