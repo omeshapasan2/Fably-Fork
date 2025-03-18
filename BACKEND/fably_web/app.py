@@ -1651,6 +1651,14 @@ def vton_fetch_url():
         vton_url = vton_item['url']
 
         root_folder = f"try_ons/{session['user_id']}"
+
+        folder_path=Path(root_folder+"/outputs")
+
+        if not folder_path.exists():
+            folder_path.mkdir(parents=True, exist_ok=True)
+            print(f"Folder created: {folder_path}")
+        else:
+            print(f"Folder already exists: {folder_path}")
         
 
         # Add url to the user record
