@@ -1625,7 +1625,9 @@ def vton_fetch_url():
         _url = f"https://cdn.fashn.ai/{result['vton_id']}/output_0.png"
         user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
         if user["virtualTryOns"][item_id]['status']=='completed':
+            print("already completed url")
             return_url = generate_secure_cloudinary_url(user["virtualTryOns"][item_id]["vtonPhoto"], cloudCredentials=cloudinary2_credentials)
+            print(return_url)
             return return_url, 200
         if (check_url.check_image(_url)):
             vton_item['status']='completed'
@@ -1772,7 +1774,7 @@ def upload_image_to_cloudinary(image_path, folder="", cloudCredentials = cloudin
             upload_result = upload(
                 image_file, 
                 type='authenticated',
-                folder="",
+                folder=folder,
                 cloud_name=cloudCredentials[0],
                 api_key=cloudCredentials[1],
                 api_secret=cloudCredentials[2]
