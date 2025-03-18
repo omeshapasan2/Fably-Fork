@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:fably/screens/home/widgets/common_appbar.dart';
+import 'package:fably/screens/scanner/vton_history.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -223,207 +224,177 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
       },
       child:Scaffold(
         appBar: CommonAppBar(
-          title: 'UPLOAD IMAGE'
-          ),
-        /*appBar: AppBar(
-          title: const Text('Upload Image'),
-          centerTitle: true,
-          backgroundColor: Colors.black,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.shopping_bag_outlined),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CartPage(),
-                    //builder: (context) => ProductPage(product: myProduct),
-                  ),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () {
-                signOut().then((o){
-                  Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  );
-                });
-              },
-            ),
-          ],
-        ),*/
+          title: 'UPLOAD IMAGE',
+        ),
         drawer: CommonDrawer(),
         body: SingleChildScrollView(
-        physics: BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Display user image
-                  _userImage != null
-                      ? Image.file(_userImage!, height: 450)
-                      : Container(
-                          height: 450,
-                          width: 300,//double.infinity,
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 0, 0, 0),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color.fromARGB(255, 255, 255, 255)),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.man,
-                              size: 300,
-                              color: const Color.fromARGB(255, 255, 255, 255),
+          physics: BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Display user image
+                    _userImage != null
+                        ? Image.file(_userImage!, height: 450)
+                        : Container(
+                            height: 450,
+                            width: 300,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 0, 0, 0),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color.fromARGB(255, 255, 255, 255)),
                             ),
-                          ),
-                        ),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => _pickImage(true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12), // Optional rounded corners
-                          ),
-                          padding: EdgeInsets.all(12), // Inner padding
-                          fixedSize: const Size(120, 100), // Ensure a square size
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.image, // Choose an appropriate icon
-                              size: 40, // Larger icon size
-                              color: Colors.black,
-                            ),
-                            const SizedBox(height: 8), // Space between icon and text
-                            const Text(
-                              'Gallery',
-                              style: TextStyle(
-                                fontSize: 14, // Adjust text size
-                                fontWeight: FontWeight.bold,
-                                fontFamily: "Jura",
-                                color: Colors.black,
+                            child: Center(
+                              child: Icon(
+                                Icons.man,
+                                size: 300,
+                                color: const Color.fromARGB(255, 255, 255, 255),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-
-                      SizedBox(width: 60),
-                      ElevatedButton(
-                        onPressed: () => _takePicture(true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12), // Optional: Rounded corners
                           ),
-                          padding: EdgeInsets.all(12), // Adjust padding to ensure square shape
-                          fixedSize: const Size(120, 100), // Set a fixed square size
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.camera_alt,
-                              size: 40, // Larger icon
-                              color: Colors.black,
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => _pickImage(true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(height: 8), // Space between icon and text
-                            const Text(
-                              'Capture',
-                              style: TextStyle(
+                            padding: EdgeInsets.all(12),
+                            fixedSize: const Size(120, 100),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.image,
+                                size: 40,
                                 color: Colors.black,
-                                fontSize: 14, // Adjust text size
-                                fontWeight: FontWeight.bold,
-                                fontFamily: "Jura",
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  // Display clothing image
-                  /*_clothingImage != null
-                      ? Image.file(_clothingImage!, height: 200)
-                      : Container(
-                          height: 200,
-                          width: 200,//double.infinity,
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 0, 0, 0),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color.fromARGB(255, 255, 255, 255)),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.checkroom,
-                              size: 200,
-                              color: const Color.fromARGB(255, 255, 255, 255),
-                            ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Gallery',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: "Jura",
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => _pickImage(false),
-                        child: Text('Select Clothing Image'),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton.icon(
-                        onPressed: () => _takePicture(false),
-                        icon: Icon(Icons.camera_alt),
-                        label: Text('Capture'),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 30),*/
-                  SizedBox(
-                    width: 300, // Adjust the width as needed
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: _uploadImages,
-                      icon: Icon(
-                        Icons.upload,
-                        color: Colors.black,
-                      ),
-                      
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12), // Optional: Rounded corners
+                        SizedBox(width: 60),
+                        ElevatedButton(
+                          onPressed: () => _takePicture(true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.all(12),
+                            fixedSize: const Size(120, 100),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.camera_alt,
+                                size: 40,
+                                color: Colors.black,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Capture',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: "Jura",
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      label: Text(
-                        'Upload Image',
-                        style: TextStyle(
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    // Upload Image button
+                    SizedBox(
+                      width: 300,
+                      height: 40,
+                      child: ElevatedButton.icon(
+                        onPressed: _uploadImages,
+                        icon: Icon(
+                          Icons.upload,
                           color: Colors.black,
-                          fontSize: 20, // Adjust text size
-                          fontWeight: FontWeight.bold,
-                          fontFamily: "Jura",
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        label: Text(
+                          'Upload Image',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Jura",
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: 10),
+                    // History button
+                    SizedBox(
+                      width: 300,
+                      height: 40,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => VtonHistoryPage(), // Replace with your history page widget
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.history,
+                          color: Colors.black,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        label: Text(
+                          'History',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Jura",
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),]
+            ],
           ),
         ),
         bottomNavigationBar: CommonBottomNavBar(

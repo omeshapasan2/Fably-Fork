@@ -25,6 +25,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
   String vton_id = "";
   String loadingMessage = 'Uploading Images';
   Timer? _timer;
+  Timer? _timeoutTimer;
 
   @override
   void initState() {
@@ -42,6 +43,13 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
   void startSendingPostRequests(Duration interval) {
     _timer = Timer.periodic(interval, (Timer timer) async {
       await sendPostRequest();
+    });
+
+    // Start timeout timer to stop periodic requests after the given timeout
+    Duration timeout = Duration(minutes: 2);
+    _timeoutTimer = Timer(timeout, () {
+      _timer?.cancel(); // Stop the periodic timer
+      print("Stopped sending requests after ${timeout.inSeconds} seconds.");
     });
   }
 

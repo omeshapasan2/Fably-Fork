@@ -5,7 +5,7 @@ from pathlib import Path
 import stripe
 import cloudinary
 import cloudinary.uploader
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session, abort, make_response
+from flask import Flask, json, request, render_template, redirect, url_for, flash, jsonify, session, abort, make_response
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from pymongo import MongoClient
 import requests
@@ -1345,6 +1345,58 @@ def virtual_try_on_endpoint():
         print(traceback.format_exc())
         print('Error: ' + str(e))
         return 'Error: ' + str(e), 500
+
+@app.route('/vton_history/')
+def vton_history():
+    cloudinary.config(
+        cloud_name=config.CLOUDINARY_CLOUD_NAME,
+        api_key=config.CLOUDINARY_API_KEY,
+        api_secret=config.CLOUDINARY_API_SECRET
+    )
+
+    if not verify_csrf(request.headers.get('X-CSRFToken')):
+        return "Unauthorised CSRF!", 400
+
+    if not customer_logged_in(""):
+        return "Unauthorised!", 400
+    
+    try:
+        user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
+
+        vton = user["virtualTryOns"]
+
+        return_vton = []
+
+        for product_id in vton.keys():
+            try:
+                item = items_collection.find_one({'_id': ObjectId(product_id)})
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                print('Error: ' + str(e))
+                continue
+            #print("Vton:", json.dumps(vton, indent=4))
+            vton[product_id]['name'] = item["name"]
+            vton[product_id]['itemId'] = product_id
+            vton[product_id]['clothPhoto'] = item["photos"][0]
+            vton[product_id]['personPhoto'] = generate_secure_cloudinary_url(vton[product_id]['personImage'])
+            vton[product_id]['imageUrl'] = f"https://cdn.fashn.ai/{vton[product_id]['vtonId']}/output_0.png"
+
+            #TEST
+            #vton[product_id]['status'] = "processing"
+
+            return_vton.append(vton[product_id])
+            #print(return_vton)
+        
+        return jsonify(return_vton)
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        print('Error: ' + str(e))
+        return "Error", 500
+
+    return jsonify({})
 
 @app.route('/virtual_try_on_v2', methods = ['POST'])
 def virtual_try_on_endpoint_two():
