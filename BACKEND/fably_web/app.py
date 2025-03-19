@@ -29,6 +29,7 @@ import secrets
 import hmac
 from PIL import Image, ExifTags
 import threading
+import copy
 #import logging
 
 
@@ -173,10 +174,21 @@ def checkout():
         clean_invalid_from_cart()
         user = customers_collection.find_one({'_id': ObjectId(session["user_id"])})
         user_cart = user['cart']
-            
-        order_data ={
+        
+        order_items = copy.deepcopy(user_cart)
+
+        if len(order_items)>0:
+            for i in range(len(order_items)):
+                item = order_items[i]
+                item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})
+                order_items[i]['price'] = item_product['price']
+                order_items[i]['name'] = item_product['name']
+                order_items[i]['seller_id'] = str(item_product['seller_id'])
+
+
+        order_data = {
             "userId": session["user_id"],
-            "items": user_cart,
+            "items": order_items,
             "checkoutInfo": checkout_data,
             "orderDate": datetime.now()
         }
@@ -258,15 +270,19 @@ def get_user_orders(user_id):
         order_total = 0
         for i in range(len(orders[o]['items'])):
             item = orders[o]['items'][i]
+            item_removed = False
             try:
                 item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})
+                if item_product == None:
+                    item_removed=True
+
             except:
                 continue
-            order_total += item["quantity"]*item_product["price"]
+            order_total += item["quantity"]*item["price"]
         orders[o]["total"] = order_total
         orders[o]["_id"] = str(orders[o]["_id"])
         orders[o]["orderDate"] = orders[o]["orderDate"].strftime("%d-%m-%Y")
-    print("orders", orders)        
+    print("orders", orders)
 
     return jsonify(orders), 200
 ### User Orders
@@ -298,16 +314,27 @@ def get_user_order_items(user_id):
 
     for i in range(len(orders[0]['items'])):
         item = orders[0]['items'][i]
+        item_removed = False
         return_item = {}
         try:
             item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})
-        except:
-            continue
+            if item_product==None:
+                item_removed = True
+
+        except Exception as e:
+            print(e)
+            item_removed = True
         return_item["quantity"] = item["quantity"]
-        return_item["_id"] = str(item_product["_id"])
-        return_item["photos"] = item_product["photos"]
-        return_item["price"] = item_product["price"]
-        return_item["name"] = item_product["name"]
+        return_item["_id"] = str(item["_id"])
+        return_item["price"] = item["price"]
+        return_item["name"] = item["name"]
+        
+        if (item_removed): # if the item has been removed from the shop
+            return_item["name"] += " (Removed)"
+            return_item["photos"] = [""]
+        else:
+            return_item["photos"] = item_product["photos"]
+
         return_items.append(return_item)
     import json
     return_order["items"] = return_items

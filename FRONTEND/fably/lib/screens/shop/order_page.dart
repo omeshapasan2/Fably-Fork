@@ -157,11 +157,16 @@ class _OrderPageState extends State<OrderPage> {
                               // Image
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8.0),
-                                child: Image.network(
+                                child: item["photos"][0]!="" ? Image.network(
                                   item["photos"][0],
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
+                                )
+                                :Icon(
+                                  Icons.image_not_supported,
+                                  size: 80,
+                                  color: Colors.grey,
                                 ),
                               ),
                               const SizedBox(width: 16),
