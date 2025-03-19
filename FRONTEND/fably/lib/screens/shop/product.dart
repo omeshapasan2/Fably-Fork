@@ -392,8 +392,8 @@ class _ProductPageState extends State<ProductPage> {
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      //maxLines: 1,
+                      //overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 12),
                     
@@ -447,9 +447,9 @@ class _ProductPageState extends State<ProductPage> {
                               padding: const EdgeInsets.all(2),
                               child: IconButton(
                                 icon: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 18,
+                                  _isWishlisted ? Icons.favorite : Icons.add,
+                                  color: _isWishlisted ? Colors.redAccent : Colors.white,
+                                  size: 28,
                                 ),
                                 padding: const EdgeInsets.all(6),
                                 constraints: const BoxConstraints(
@@ -468,7 +468,7 @@ class _ProductPageState extends State<ProductPage> {
                             ),
                             const SizedBox(width: 8),
                             const Text(
-                              "Favorites",
+                              "Wishlist",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
