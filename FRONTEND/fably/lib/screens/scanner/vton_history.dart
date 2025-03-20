@@ -13,6 +13,7 @@ class VtonHistoryPage extends StatefulWidget {
 class _VtonHistoryPageState extends State<VtonHistoryPage> {
   // Dummy data representing VTON history
   List<dynamic> vtonHistory = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -64,6 +65,7 @@ class _VtonHistoryPageState extends State<VtonHistoryPage> {
       print(response.body);
       setState(() {
         vtonHistory = jsonDecode(response.body);
+        isLoading = false;
       });
       //image_url = response.body;
     } else {
@@ -88,101 +90,103 @@ class _VtonHistoryPageState extends State<VtonHistoryPage> {
         ),
         centerTitle: true, // Centers the title
       ),
-      body: vtonHistory.isEmpty
+      body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: vtonHistory.length,
-              itemBuilder: (context, index) {
-                final item = vtonHistory[index];
-                return InkWell(
-                  onTap: () {
-                    // if the image is still processing
-                    if (vtonHistory[index]['status'] == 'processing') {
-                      getVtonStatus(index);
-                    } else {
-                      String itemName = vtonHistory[index]['name'];
-                      String personImageUrl = vtonHistory[index]['personPhoto'];
-                      String clothPhoto = vtonHistory[index]['clothPhoto'];
-                      String vtonPhoto = vtonHistory[index]['imageUrl'];
+          : vtonHistory.isEmpty
+              ? const Center(child: Text("No Try-On History"))
+              : ListView.builder(
+                  itemCount: vtonHistory.length,
+                  itemBuilder: (context, index) {
+                    final item = vtonHistory[index];
+                    return InkWell(
+                      onTap: () {
+                        // if the image is still processing
+                        if (vtonHistory[index]['status'] == 'processing') {
+                          getVtonStatus(index);
+                        } else {
+                          String itemName = vtonHistory[index]['name'];
+                          String personImageUrl =
+                              vtonHistory[index]['personPhoto'];
+                          String clothPhoto = vtonHistory[index]['clothPhoto'];
+                          String vtonPhoto = vtonHistory[index]['imageUrl'];
 
-                      // Navigator.push here.
-
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(
-                      10), // Ensure ripple effect matches card shape
-                  child: Card(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: item["status"] == "processing"
-                                ? SizedBox(
-                                    height:
-                                        180, // Match the image height for alignment
-                                    width: double.infinity,
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment
-                                          .center, // Center vertically
-                                      crossAxisAlignment: CrossAxisAlignment
-                                          .center, // Center horizontally
-                                      children: [
-                                        Icon(
-                                          Icons.hourglass_empty,
-                                          size: 50,
-                                          color: Colors.grey,
+                          // Navigator.push here.
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(
+                          10), // Ensure ripple effect matches card shape
+                      child: Card(
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: item["status"] == "processing"
+                                    ? SizedBox(
+                                        height:
+                                            180, // Match the image height for alignment
+                                        width: double.infinity,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment
+                                              .center, // Center vertically
+                                          crossAxisAlignment: CrossAxisAlignment
+                                              .center, // Center horizontally
+                                          children: [
+                                            Icon(
+                                              Icons.hourglass_empty,
+                                              size: 50,
+                                              color: Colors.grey,
+                                            ),
+                                            const SizedBox(height: 8),
+                                            const Text(
+                                              "Processing",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(height: 8),
-                                        const Text(
-                                          "Processing",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.grey,
-                                          ),
+                                      )
+                                    : AspectRatio(
+                                        aspectRatio: 3 / 4,
+                                        child: Image.network(
+                                          item["imageUrl"]!,
+                                          height: 180,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                            return const Icon(Icons.error,
+                                                size: 50);
+                                          },
                                         ),
-                                      ],
-                                    ),
-                                  )
-                                : AspectRatio(
-                                    aspectRatio: 3 / 4,
-                                    child: Image.network(
-                                      item["imageUrl"]!,
-                                      height: 180,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return const Icon(Icons.error,
-                                            size: 50);
-                                      },
-                                    ),
-                                  ),
+                                      ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                item["name"] ?? "Unknown Item",
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            item["name"] ?? "Unknown Item",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
     );
   }
 }
