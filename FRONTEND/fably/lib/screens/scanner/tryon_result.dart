@@ -188,6 +188,15 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
       startSendingPostRequests(Duration(seconds: 1));
       //image_url = response.body;
     } else {
+      setState(() {
+        errorMessage = "Oops! Something went wrong!";
+        isLoading = false;
+      });
+      if (response.body == "TryOn Limit reached") {
+        setState(() {
+          errorMessage = "Looks like you have exceeded your Virtual Try-On limit";
+        });
+      }
       _showMessage('Upload failed: ${response.body}');
     }
     /*setState(() {
@@ -233,7 +242,12 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
                       ? <Widget>[
                           Text(
                             errorMessage!,
-                            style: TextStyle(color: Colors.red),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: const Color.fromARGB(255, 255, 255, 255),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold
+                            ),
                           )
                         ]
                       : image_url != ""

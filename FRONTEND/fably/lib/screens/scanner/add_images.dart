@@ -381,7 +381,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
                           ),
                         ),
                         label: Text(
-                          'History',
+                          'Try-On History',
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: 20,
