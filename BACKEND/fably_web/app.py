@@ -632,7 +632,15 @@ def get_cart_items(user_id):
                 item = user_cart[i]
                 try:
                     item_product = items_collection.find_one({'_id': ObjectId(item['_id'])})# product info corrosponding to id
+                    if item_product==None:
+                        #user_cart.pop(i)
+                        result = customers_collection.update_one(
+                            {"_id": ObjectId(session["user_id"])},  # Filter the user by id
+                            {"$pull": {"cart": item}}  # Remove the item from the cart array
+                        )
+                        continue
                     if(item['quantity']==0):
+                        #user_cart.pop(i)
                         result = customers_collection.update_one(
                             {"_id": ObjectId(session["user_id"])},  # Filter the user by id
                             {"$pull": {"cart": item}}  # Remove the item from the cart array
@@ -685,14 +693,14 @@ def get_wishlist_items(user_id):
                 try:
                     item_product = items_collection.find_one({'_id': ObjectId(item)})# product info corrosponding to id
                     if item_product==None:
-                        user_wishlist.pop(i)
+                        #user_wishlist.pop(i)
                         result = customers_collection.update_one(
                             {"_id": ObjectId(session["user_id"])},  # Filter the user by id
                             {"$pull": {"wishlist": item}}  # Remove the item from the cart array
                         )
                         continue
                 except Exception as e:
-                    print("item_produc fetching exception",e)
+                    print("item_product fetching exception",e)
                     result = customers_collection.update_one(
                         {"_id": ObjectId(session["user_id"])},  # Filter the user by id
                         {"$pull": {"wishlist": item}}  # Remove the item from the cart array
