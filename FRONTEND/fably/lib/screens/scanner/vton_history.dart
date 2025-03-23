@@ -45,7 +45,7 @@ class _VtonHistoryPageState extends State<VtonHistoryPage> {
           setState(() {
             vtonHistory[index]['status'] = "completed";
           });
-          _showMessage("Your try on is ready");
+          _showMessage("Your Try-On is ready");
         }
         //_showMessage('POST request successful: ${response.body}');
       } else {

@@ -84,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       await prefs.setPrefs('userInfo', jsonEncode(userInfo));
 
-      _showMessage("Login successful. User info and cookies saved.");
+      _showMessage("Login successful");
       setState(() {
         _isLoading = true;
       });

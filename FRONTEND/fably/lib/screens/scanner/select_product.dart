@@ -57,9 +57,7 @@ class _SelectProductPageState extends State<SelectProductPage> {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching products: $e')),
-      );
+      _showMessage('Error fetching products: $e');
     }
   }
 

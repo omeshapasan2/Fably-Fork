@@ -47,7 +47,7 @@ class _SuccessPageState extends State<SuccessPage> {
         );
       }
       submitOrder();
-      _showMessage("Payment successful for ${widget.name} (${widget.email})!");
+      //_showMessage("Payment successful!");
     });
   }
 

@@ -64,7 +64,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       );
     } else {
-      _showMessage("Please fix the errors in the form.");
+      _showMessage("Some form inputs are invalid.");
     }
   }
 

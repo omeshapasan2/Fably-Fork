@@ -146,9 +146,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
     final requests = BackendRequests();
 
     if (imageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select an image')),
-      );
+      _showMessage('Please select an image');
       return;
     }
 
@@ -181,7 +179,7 @@ class _VirtualTryOnResultPageState extends State<VirtualTryOnResultPage> {
         isLoading = false;
       });
     } else if (response.statusCode == 200) {
-      _showMessage('Upload successful: ${response.body}');
+      _showMessage('Upload successful');
       setState(() {
         vton_id = response.body;
       });

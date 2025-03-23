@@ -157,7 +157,7 @@ class _UploadImagesPageState extends State<UploadImagesPage> {
         ),
       );
     } else{
-      _showMessage("Virtual Try-On function...");
+      //_showMessage("Virtual Try-On function...");
 
       Navigator.push(
       context,
