@@ -1,3 +1,3 @@
 library my_globals;
 
-bool tryOnDebugMode = true;
+bool tryOnDebugMode = false;
